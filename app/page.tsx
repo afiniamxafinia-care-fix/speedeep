@@ -28,6 +28,7 @@ export default function Home() {
   const [hearts, setHearts] = useState<Record<string, number>>({ Valeria: 18, Mateo: 12, Sofía: 26 });
   const [sent, setSent] = useState<string[]>([]);
   const [practiceOpen, setPracticeOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -84,10 +85,12 @@ export default function Home() {
 
       <section className="main-column" id="inicio">
         <header className="topbar">
-          <button className="mobile-menu" aria-label="Abrir menú"><Icon name="menu"/></button>
+          <button className="mobile-menu" aria-label="Abrir menú" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(true)}><Icon name="menu"/></button>
           <div className="breadcrumb">Tu espacio <span>/</span> Inicio</div>
           <div className="topbar-right"><span className="live-status"><i/> Tu progreso está al día</span><button className="help-button">?</button></div>
         </header>
+
+        {mobileNavOpen && <><button className="mobile-drawer-backdrop" aria-label="Cerrar menú" onClick={() => setMobileNavOpen(false)}/><aside className="mobile-drawer"><div className="mobile-drawer-head"><a className="brand" href="#inicio" onClick={() => setMobileNavOpen(false)}><span className="brand-mark"><span/></span><span>speed<span className="brand-light">deep</span></span></a><button className="mobile-drawer-close" aria-label="Cerrar menú" onClick={() => setMobileNavOpen(false)}>×</button></div><p className="side-label">TU ESPACIO</p><nav className="side-nav" aria-label="Navegación móvil"><a className="nav-item active" href="#inicio" onClick={() => setMobileNavOpen(false)}><Icon name="home"/>Inicio</a><button className="nav-item" onClick={() => { setMobileNavOpen(false); startPractice(); }}><Icon name="book"/>Práctica</button><a className="nav-item" href="#live" onClick={() => setMobileNavOpen(false)}><Icon name="users"/>Live</a><a className="nav-item" href="#hitos" onClick={() => setMobileNavOpen(false)}><Icon name="trophy"/>Hitos</a><a className="nav-item" href="#referidos" onClick={() => setMobileNavOpen(false)}><Icon name="gift"/>Invita y gana</a></nav></aside></>}
 
         <div className="page-content">
           <div className="demo-notice"><span>VISTA DE DEMOSTRACIÓN</span><span>Los perfiles y métricas sociales son ilustrativos.</span></div>

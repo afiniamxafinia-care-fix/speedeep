@@ -81,6 +81,8 @@ export async function GET() {
       },
       stats: {
         latestPpm: speedValue,
+        latestReadingPpm: speedWindow[0]?.raw_active_ppm === null || !speedWindow.length ? null : Math.round(Number(speedWindow[0].raw_active_ppm)),
+        speedEvidenceCount: speedWindow.length,
         comprehension,
         practicesCount: (sessions ?? []).filter((item: { completed_at: string | null }) => item.completed_at).length + (trainingAttempts ?? []).length + (flashProfiles?.[0]?.rounds_completed ?? 0),
         readingsCount: (sessions ?? []).filter((item: { completed_at: string | null }) => item.completed_at).length,

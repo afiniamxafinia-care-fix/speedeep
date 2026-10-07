@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import PracticeLibrary, { practiceModes, type PracticeKind } from "@/app/components/PracticeLibrary";
 import Curriculum from "@/app/components/Curriculum";
 import MissionOne from "@/app/components/MissionOne";
@@ -10,7 +10,7 @@ import FlashNumbers from "@/app/components/FlashNumbers";
 type IconName = "home" | "route" | "arena" | "practice" | "profile" | "arrow" | "book" | "spark" | "heart" | "camera" | "close" | "target";
 type PracticeQuestion = { id: string; prompt: string; options: string[] };
 type PracticeData = { article: { id: string; title: string; body: string; word_count: number; estimated_minutes: number }; questions: PracticeQuestion[] };
-type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; comprehension: number | null; practicesCount: number; readingsCount: number; trainingCount: number; flashRounds: number; diagnosticCompleted: boolean; lessonsCompleted: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; activeLessonCode: string | null; completedCount: number; lastTransferCorrect: number | null; sentenceActionState: "not_started" | "completed" | "demonstrated"; sentenceChunkState: "not_started" | "completed"; diagnosticStatus: "not_started" | "active" | "completed"; diagnosticStep: number | null }; lab: { numbersRank: number; numbersRounds: number } };
+type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; latestReadingPpm: number | null; speedEvidenceCount: number; comprehension: number | null; practicesCount: number; readingsCount: number; trainingCount: number; flashRounds: number; diagnosticCompleted: boolean; lessonsCompleted: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; activeLessonCode: string | null; completedCount: number; lastTransferCorrect: number | null; sentenceActionState: "not_started" | "completed" | "demonstrated"; sentenceChunkState: "not_started" | "completed"; diagnosticStatus: "not_started" | "active" | "completed"; diagnosticStep: number | null }; lab: { numbersRank: number; numbersRounds: number } };
 type Anchor = { nextArticleId: string | null; baselinePpm: number | null; baselineComprehension: number | null; comparisonPpm: number | null; comparisonComprehension: number | null; deltaPpm: number | null };
 type DashboardWithAnchor = Dashboard & { anchor: Anchor };
 type Tab = "Home" | "Ruta" | "Arena" | "Prácticas" | "Perfil";
@@ -73,12 +73,15 @@ export default function Home() {
   const [libraryKind, setLibraryKind] = useState<PracticeKind | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
+  const [readingStarted, setReadingStarted] = useState(false);
+  const [startingReading, setStartingReading] = useState(false);
+  const readingStartRequest = useRef<AbortController | null>(null);
   const [finished, setFinished] = useState(false);
   const [practice, setPractice] = useState<PracticeData | null>(null);
   const [practiceTicket, setPracticeTicket] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [savingPractice, setSavingPractice] = useState(false);
-  const [practiceResult, setPracticeResult] = useState<{ rawActivePpm: number; comprehensionScore: number; correctAnswers: number; totalQuestions: number } | null>(null);
+  const [practiceResult, setPracticeResult] = useState<{ rawActivePpm: number; comprehensionScore: number; correctAnswers: number; totalQuestions: number; speedEligible: boolean } | null>(null);
 
   const milestone = clubs.find(value => ppm === null || ppm < value) ?? "+1500";
   const previousMilestone = typeof milestone === "number" ? (clubs[clubs.indexOf(milestone) - 1] ?? 0) : 1500;
@@ -166,22 +169,39 @@ export default function Home() {
       const response = await fetch(articleId ? `/api/practice?articleId=${encodeURIComponent(articleId)}` : "/api/practice");
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "No se pudo cargar la lectura.");
-      const startResponse = await fetch("/api/practice/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ articleId: data.article.id }) });
-      const startData = await startResponse.json();
-      if (!startResponse.ok) throw new Error(startData.error ?? "No se pudo iniciar el cronómetro seguro.");
       setPractice(data);
       setPracticeResult(null);
       setAnswers({});
-      setPracticeTicket(startData.ticketId);
+      setPracticeTicket(null);
       setSeconds(0);
       setFinished(false);
-      setRunning(true);
+      setRunning(false);
+      setReadingStarted(false);
       setPracticeOrigin(origin);
       setActiveTab(origin === "route" ? "Ruta" : "Prácticas");
       setPracticeOpen(true);
     } catch (error) {
       setAppError(error instanceof Error ? error.message : "No se pudo iniciar la práctica.");
     }
+  };
+
+  const beginReading = async () => {
+    if (!practice || startingReading || readingStarted) return;
+    const controller = new AbortController();
+    readingStartRequest.current = controller;
+    setStartingReading(true); setAppError("");
+    try {
+      const response = await fetch("/api/practice/start", { method: "POST", signal: controller.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ articleId: practice.article.id }) });
+      const data = await response.json();
+      if (controller.signal.aborted) return;
+      if (!response.ok) throw new Error(data.error ?? "No se pudo iniciar la lectura.");
+      setPracticeTicket(data.ticketId);
+      setSeconds(0);
+      setReadingStarted(true);
+      setRunning(true);
+    } catch (error) {
+      if (!controller.signal.aborted) setAppError(error instanceof Error ? error.message : "No se pudo iniciar la lectura.");
+    } finally { if (readingStartRequest.current === controller) { readingStartRequest.current = null; setStartingReading(false); } }
   };
 
   const submitAuth = async () => {
@@ -232,9 +252,13 @@ export default function Home() {
   };
 
   const endPractice = () => {
+    readingStartRequest.current?.abort();
+    readingStartRequest.current = null;
+    setStartingReading(false);
     setPracticeOpen(false);
     setRunning(false);
     setFinished(false);
+    setReadingStarted(false);
     setPractice(null);
     setPracticeTicket(null);
     if (practiceOrigin === "route") navigate("Ruta");
@@ -306,14 +330,14 @@ export default function Home() {
         </section>
 
         <section className="metric-grid" aria-label="Tu progreso actual">
-          <article className="metric-card metric-ppm"><span className="metric-icon"><Icon name="target"/></span><span className="metric-label">Velocidad</span><strong>{visiblePpm === null ? "—" : Math.round(visiblePpm)}{visiblePpm !== null && <small> ppm</small>}</strong><small className="metric-note">{ppm !== null ? "mediana de lecturas válidas" : visiblePpm !== null ? "referencia inicial · provisional" : "haz tu lectura inicial en Ruta"}</small></article>
+          <article className="metric-card metric-ppm"><span className="metric-icon"><Icon name="target"/></span><span className="metric-label">Velocidad</span><strong>{visiblePpm === null ? "—" : Math.round(visiblePpm)}{visiblePpm !== null && <small> ppm</small>}</strong><small className="metric-note">{ppm !== null ? "mediana de lecturas válidas" : visiblePpm !== null ? `referencia inicial · ${Math.min(3, dashboard?.stats.speedEvidenceCount ?? 0)}/3 lecturas válidas` : "haz tu lectura inicial en Ruta"}</small></article>
           <article className="metric-card metric-comprehension"><span className="metric-icon"><Icon name="spark"/></span><span className="metric-label">Comprensión</span><strong>{visibleComprehension === null ? "—" : visibleComprehension}{visibleComprehension !== null && <small>%</small>}</strong><small className="metric-note">{comprehension !== null ? "promedio de lecturas válidas" : visibleComprehension !== null ? "referencia inicial · provisional" : "con la lectura inicial"}</small></article>
           <article className="metric-card metric-streak"><span className="metric-icon streak-icon">✦</span><span className="metric-label">QSD</span><strong>—</strong><small className="metric-note">Requiere evidencia de seis habilidades</small></article>
         </section>
 
         {dashboard?.anchor.baselinePpm !== null && dashboard?.anchor.baselinePpm !== undefined && <section className="home-anchor" aria-label="Tu punto de partida">
           <strong>Tu punto de partida: {dashboard.anchor.baselinePpm} ppm</strong>
-          <span>{dashboard.anchor.comparisonPpm !== null ? `Segunda lectura: ${dashboard.anchor.comparisonPpm} ppm (${dashboard.anchor.deltaPpm! > 0 ? "+" : ""}${dashboard.anchor.deltaPpm} ppm). Compara siempre junto con la comprensión.` : `Comprensión: ${dashboard.anchor.baselineComprehension}%. Tu siguiente lectura mostrará el cambio.`}</span>
+          <span>{dashboard.anchor.comparisonPpm !== null ? `Segunda lectura: ${dashboard.anchor.comparisonPpm} ppm (${dashboard.anchor.deltaPpm! > 0 ? "+" : ""}${dashboard.anchor.deltaPpm} ppm). Compara siempre junto con la comprensión.` : `Comprensión inicial: ${dashboard.anchor.baselineComprehension}%. Última lectura válida: ${dashboard.stats.latestReadingPpm ?? dashboard.anchor.baselinePpm} ppm. Lecturas elegibles: ${Math.min(3, dashboard.stats.speedEvidenceCount)}/3 para la mediana estable.`}</span>
           <small>Referencia provisional; no acredita QSD ni un club.</small>
         </section>}
 
@@ -396,10 +420,36 @@ export default function Home() {
         {user ? <button className="secondary-action" onClick={signOut}>Cerrar sesión</button> : <button className="secondary-action" onClick={() => { setProfileOpen(false); setAuthOpen(true); }}>Entrar a mi cuenta</button>}
       </section></div>}
 
-      {practiceOpen && practice && <div className="sheet-backdrop practice-backdrop" onClick={endPractice}><section className="practice-sheet" role="dialog" aria-modal="true" aria-labelledby="practice-title" onClick={(event) => event.stopPropagation()}>
+      {practiceOpen && practice && <div className="sheet-backdrop practice-backdrop" onClick={endPractice}><section className="practice-sheet" role="dialog" aria-modal="true" aria-labelledby="practice-title" onClick={event => event.stopPropagation()}>
         <div className="sheet-handle"/><button className="sheet-close" onClick={endPractice} aria-label="Cerrar práctica"><Icon name="close"/></button>
-        <div className="practice-topline"><span>{finished ? "REVISA LO QUE LEÍSTE" : practiceOrigin === "route" ? "TU LECTURA DE REFERENCIA" : "LECTURA CRONOMETRADA"}</span><strong>{minutes}:{secs}</strong></div><h2 id="practice-title">{practiceResult ? "Lectura guardada" : practice.article.title}</h2>
-        {practiceResult ? <><p className="practice-instructions">Tu resultado quedó guardado. Compara la velocidad siempre junto con la comprensión.</p><div className="result-grid"><div><strong>{Math.round(practiceResult.rawActivePpm)}</strong><span>ppm en esta lectura</span></div><div><strong>{practiceResult.comprehensionScore}%</strong><span>comprensión</span></div><div><strong>{practiceResult.correctAnswers}/{practiceResult.totalQuestions}</strong><span>respuestas</span></div></div>{practiceOrigin === "route" && practiceResult.comprehensionScore < 70 && <p className="practice-instructions">Esta lectura te da una observación inicial, pero necesitamos más comprensión en un texto nuevo para usar su PPM como referencia.</p>}<button className="primary-cta practice-action" onClick={endPractice}>{practiceOrigin === "route" ? "Volver a mi ruta" : "Volver a Prácticas"} <Icon name="arrow"/></button></> : !finished ? <><p className="practice-instructions">Lee el texto a tu ritmo. El cronómetro mide solo esta lectura; al terminar, se detiene mientras respondes. Para una medición válida, lee durante al menos 10 segundos.</p><div className="passage">{practice.article.body}</div><button className="primary-cta practice-action" disabled={seconds < 10} onClick={() => { setRunning(false); setFinished(true); }}>{seconds < 10 ? "Lee un poco más…" : "Ya terminé de leer"} <Icon name="arrow"/></button></> : <><p className="practice-instructions">Responde para guardar la práctica. Tus respuestas se califican de forma segura.</p><div className="question-stack">{practice.questions.map((question, qIndex) => <div className="question-block" key={question.id}><strong>{qIndex + 1}. {question.prompt}</strong><div className="answer-list">{question.options.map((option, index) => <button key={`${question.id}-${index}`} className={`answer-option ${answers[question.id] === index ? "chosen" : ""}`} onClick={() => setAnswers((current) => ({ ...current, [question.id]: index }))}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div></div>)}</div>{appError && <p className="inline-error" role="alert">{appError}</p>}<button className="primary-cta practice-action" disabled={savingPractice || practice.questions.some((question) => answers[question.id] === undefined)} onClick={submitPractice}>{savingPractice ? "Guardando…" : "Guardar mi resultado"} <Icon name="arrow"/></button></>}
+        <div className="practice-topline"><span>{practiceResult ? "LECTURA GUARDADA" : finished ? "REVISA LO QUE LEÍSTE" : practiceOrigin === "route" ? "TU LECTURA DE REFERENCIA" : "LECTURA CRONOMETRADA"}</span><strong>{minutes}:{secs}</strong></div>
+        <h2 id="practice-title">{practiceResult ? "Lectura guardada" : practice.article.title}</h2>
+        {practiceResult ? <>
+          <p className="practice-instructions">Compara siempre tu velocidad junto con la comprensión.</p>
+          <div className="result-grid"><div><strong>{Math.round(practiceResult.rawActivePpm)}</strong><span>ppm en esta lectura</span></div><div><strong>{practiceResult.comprehensionScore}%</strong><span>comprensión</span></div><div><strong>{practiceResult.correctAnswers}/{practiceResult.totalQuestions}</strong><span>respuestas</span></div></div>
+          <p className="practice-instructions">{practiceResult.speedEligible ? `Esta lectura cuenta para tu velocidad general (${Math.min(3, dashboard?.stats.speedEvidenceCount ?? 0)}/3 lecturas válidas).` : "Este resultado queda en Prácticas; no se suma a la velocidad general."}</p>
+          {practiceOrigin === "route" && practiceResult.comprehensionScore < 70 && <p className="practice-instructions">Necesitamos más comprensión en un texto nuevo para usar este PPM como referencia.</p>}
+          <button className="primary-cta practice-action" onClick={endPractice}>{practiceOrigin === "route" ? "Volver a mi ruta" : "Volver a Prácticas"} <Icon name="arrow"/></button>
+        </> : !readingStarted ? <div className="reading-ready">
+          <strong>Lee a tu ritmo</strong>
+          <p>Cuando estés listo, toca «Iniciar lectura». El texto aparecerá y el tiempo empezará en 0:00. Al terminar, responderás unas preguntas.</p>
+          {appError && <p className="inline-error" role="alert">{appError}</p>}
+          <button className="primary-cta practice-action" disabled={startingReading} onClick={() => { void beginReading(); }}>{startingReading ? "Preparando lectura…" : "Iniciar lectura"} <Icon name="arrow"/></button>
+        </div> : !finished ? <>
+          <p className="practice-instructions">Lee a tu ritmo. Al terminar, detén el tiempo.</p>
+          <div className="passage">{practice.article.body}</div>
+          <button className="primary-cta practice-action" disabled={seconds < 10} onClick={() => { setRunning(false); setFinished(true); }}>{seconds < 10 ? "Lee un poco más…" : "Terminé de leer"} <Icon name="arrow"/></button>
+        </> : <>
+          <p className="practice-instructions">Responde lo que recuerdas. Si no lo tienes claro, puedes indicarlo.</p>
+          <div className="question-stack">{practice.questions.map((question, qIndex) => <div className="question-block" key={question.id}>
+            <strong>{qIndex + 1}. {question.prompt}</strong>
+            <div className="answer-list">{question.options.map((option, index) => <button key={`${question.id}-${index}`} className={`answer-option ${answers[question.id] === index ? "chosen" : ""}`} onClick={() => setAnswers(current => ({ ...current, [question.id]: index }))}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}
+              <button className={`answer-option unsure-option ${answers[question.id] === -1 ? "chosen" : ""}`} onClick={() => setAnswers(current => ({ ...current, [question.id]: -1 }))}><span>?</span>No lo recuerdo / no lo tengo claro</button>
+            </div>
+          </div>)}</div>
+          {appError && <p className="inline-error" role="alert">{appError}</p>}
+          <button className="primary-cta practice-action" disabled={savingPractice || practice.questions.some(question => answers[question.id] === undefined)} onClick={submitPractice}>{savingPractice ? "Guardando…" : "Guardar mi resultado"} <Icon name="arrow"/></button>
+        </>}
       </section></div>}
 
       {authOpen && <div className="sheet-backdrop" onClick={() => setAuthOpen(false)}><section className="profile-sheet auth-sheet" role="dialog" aria-modal="true" aria-labelledby="auth-title" onClick={event => event.stopPropagation()}>

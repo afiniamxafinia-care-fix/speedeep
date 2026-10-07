@@ -57,7 +57,12 @@ export default function FlashNumbers({ origin, onClose }: { origin: "route" | "l
         const start = performance.now();
         timeout.current = setTimeout(() => {
           if (document.hidden) { setPhase("ready"); return; }
-          setObservedMs(Math.max(1,Math.round(performance.now()-start)));
+          const elapsed = Math.max(1,Math.round(performance.now()-start));
+          if (elapsed > state.exposureMs + Math.max(150,Math.round(state.exposureMs*0.5))) {
+            setError("La pantalla demoró más de lo previsto. Repite este destello sin penalización.");
+            setPhase("ready"); return;
+          }
+          setObservedMs(elapsed);
           setPhase("pick");
         }, state.exposureMs);
       })];

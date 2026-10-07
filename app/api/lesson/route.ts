@@ -4,7 +4,7 @@ export async function GET(request: Request) {
   try {
     const token = await requireAccessToken();
     const lessonCode = new URL(request.url).searchParams.get("lessonCode") ?? "1.1";
-    if (!["1.1", "1.2", "1.3", "1.4", "1.C", "2.1", "2.2", "2.3", "2.4", "2.C"].includes(lessonCode)) throw new ApiError("Esta lección no está disponible.", 422);
+    if (!["1.1", "1.2", "1.3", "1.4", "1.C", "2.1", "2.2", "2.3", "2.4", "2.C", "3.1", "3.2", "3.3", "3.4", "3.C"].includes(lessonCode)) throw new ApiError("Esta lección no está disponible.", 422);
     const state = await supabaseFetch("/rest/v1/rpc/begin_curriculum_lesson", token, {
       method: "POST", body: JSON.stringify({ p_lesson_code: lessonCode }),
     });

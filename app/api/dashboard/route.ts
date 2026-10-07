@@ -4,10 +4,11 @@ export async function GET() {
   try {
     const token = await requireAccessToken();
     const authUser = await supabaseFetch("/auth/v1/user", token);
-    const [profile, sessions, subscriptions] = await Promise.all([
+    const [profile, sessions, subscriptions, lessonAttempts] = await Promise.all([
       supabaseFetch(`/rest/v1/profiles?select=display_name,avatar_url&id=eq.${encodeURIComponent(authUser.id)}`, token),
       supabaseFetch("/rest/v1/practice_sessions?select=id,article_id,article_content_version,completed_at,raw_active_ppm,adjusted_ppm,comprehension_score,validity_status,speed_eligible,reading_articles(assessment_use,word_count)&order=completed_at.desc&limit=1000", token),
       supabaseFetch(`/rest/v1/subscriptions?select=status,trial_ends_at,current_period_ends_at,cancel_at_period_end&user_id=eq.${encodeURIComponent(authUser.id)}`, token),
+      supabaseFetch("/rest/v1/curriculum_attempts?select=status,current_step,transfer_correct,started_at&lesson_code=eq.1.1&order=started_at.desc&limit=20", token),
     ]);
     type ReadingSession = { article_id: string; article_content_version: number; validity_status: string; speed_eligible: boolean; comprehension_score: number; raw_active_ppm: number | null; reading_articles: { assessment_use: string; word_count: number } };
     // Select the first valid encounter with each version; repeats remain useful
@@ -36,6 +37,11 @@ export async function GET() {
     return Response.json({
       user: { name: profile?.[0]?.display_name ?? authUser.user_metadata?.name ?? "Lector", avatarUrl: profile?.[0]?.avatar_url ?? null },
       membership: subscriptions?.[0] ?? null,
+      curriculum: {
+        activeStep: lessonAttempts?.find((item: { status: string }) => item.status === "active")?.current_step ?? null,
+        completedCount: lessonAttempts?.filter((item: { status: string }) => item.status === "completed").length ?? 0,
+        lastTransferCorrect: lessonAttempts?.find((item: { status: string }) => item.status === "completed")?.transfer_correct ?? null,
+      },
       stats: {
         latestPpm: speedValue,
         comprehension,

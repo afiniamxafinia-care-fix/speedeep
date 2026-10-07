@@ -1,54 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-type Case = { sentence: string; question: string; options: [string, string, string]; answer: number; feedback: [string, string, string] };
-const cases: Case[] = [
-  { sentence: "Lucía, después de revisar tres propuestas, eligió la opción más sencilla.", question: "¿Qué hizo Lucía al final?", options: ["Revisó tres propuestas", "Eligió la opción más sencilla", "Presentó tres propuestas"], answer: 1, feedback: ["Revisar ocurrió antes; la acción central es que eligió una opción.", "Exacto. El detalle intercalado explica qué hizo antes.", "La oración no dice que Lucía presentara propuestas."] },
-  { sentence: "El tren, pese a la lluvia intensa, salió a tiempo de la estación.", question: "¿Qué ocurrió?", options: ["La lluvia detuvo al tren", "El tren llegó tarde", "El tren salió a tiempo"], answer: 2, feedback: ["La lluvia es una dificultad, pero no impidió la salida.", "La oración habla de la salida, no de la llegada.", "Sí. Conservaste la acción central a pesar del detalle."] },
-  { sentence: "Después de recibir la alerta, el equipo de guardia cerró la entrada norte.", question: "¿Qué hizo el equipo?", options: ["Recibió la alerta y abrió la entrada", "Cerró la entrada norte", "Cerró todas las entradas"], answer: 1, feedback: ["La alerta ocurrió primero; la entrada fue cerrada.", "Correcto. El detalle inicial indica cuándo actuó el equipo.", "El texto solo menciona la entrada norte."] },
-  { sentence: "Marta no entregó el informe que había corregido durante la mañana.", question: "¿Qué NO hizo Marta?", options: ["Corregir un informe", "Entregar el informe", "Trabajar durante la mañana"], answer: 1, feedback: ["Corregir aparece como una acción realizada; observa la palabra «no» junto a «entregó».", "Bien. La negación cambia la acción principal.", "La oración sitúa la corrección durante la mañana; la negación afecta a la entrega."] },
-  { sentence: "Aunque el precio subió el lunes, la tienda mantuvo el descuento anunciado.", question: "¿Qué hizo la tienda?", options: ["Retiró el descuento", "Mantuvo el descuento", "Bajó el precio el lunes"], answer: 1, feedback: ["«Aunque» presenta un contraste: el descuento se mantuvo.", "Sí. Separaste el cambio de precio de la decisión de la tienda.", "El precio subió; la tienda mantuvo el descuento."] },
-  { sentence: "La coordinadora, tras escuchar a los vecinos, aplazó la reunión del viernes.", question: "¿Qué sucedió con la reunión?", options: ["Se adelantó", "Se celebró el viernes", "Se aplazó"], answer: 2, feedback: ["Aplazar significa pasarla a otro momento; escuchar fue el paso anterior.", "La oración dice que se aplazó, así que no se celebró como estaba previsto.", "Correcto. Reconociste la acción central en una oración nueva."] },
-];
+type Case = { step: number; role: "probe" | "guided" | "transfer"; sentence: string; question: string; options: string[] };
+type State = { attemptId: string; status: "active" | "completed"; variant: string; case?: Case; retryPending?: boolean; priorFeedback?: string | null; transferCorrect?: number };
+type Feedback = { feedback: string; correct: boolean; retryNeeded: boolean; completed: boolean; transferCorrect: number | null };
 
 export default function MissionOne({ onClose }: { onClose: () => void }) {
-  const [step, setStep] = useState(0);
+  const [state, setState] = useState<State | null>(null);
   const [chosen, setChosen] = useState<number | null>(null);
-  const [firstAttempts, setFirstAttempts] = useState<(boolean | null)[]>(Array(cases.length).fill(null));
-  const [retried, setRetried] = useState(false);
-  const finished = step >= cases.length;
-  const current = cases[step];
-  const transferCorrect = firstAttempts.slice(4).filter(Boolean).length;
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
-  function choose(index: number) {
-    if (chosen !== null) return;
-    setChosen(index);
-    if (firstAttempts[step] === null) setFirstAttempts(previous => previous.map((value, i) => i === step ? index === current.answer : value));
+  async function load() {
+    setBusy(true); setError("");
+    try {
+      const response = await fetch("/api/lesson", { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "No se pudo abrir la misión.");
+      setState(data); setFeedback(null); setChosen(null);
+    } catch (err) { setError(err instanceof Error ? err.message : "No se pudo abrir la misión."); }
+    finally { setBusy(false); }
+  }
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/lesson", { signal: controller.signal, cache: "no-store" }).then(async response => {
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "No se pudo abrir la misión.");
+      return data as State;
+    }).then(data => { if (!controller.signal.aborted) setState(data); })
+      .catch(err => { if (!controller.signal.aborted) setError(err instanceof Error ? err.message : "No se pudo abrir la misión."); });
+    return () => controller.abort();
+  }, []);
+
+  async function choose(index: number) {
+    if (!state?.case || busy || chosen !== null) return;
+    setChosen(index); setBusy(true); setError("");
+    try {
+      const response = await fetch("/api/lesson", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attemptId: state.attemptId, index }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "No se pudo guardar la respuesta.");
+      setFeedback(data);
+    } catch (err) { setChosen(null); setError(err instanceof Error ? err.message : "No se pudo guardar la respuesta."); }
+    finally { setBusy(false); }
   }
 
   function next() {
-    if (chosen === null) return;
-    if (chosen !== current.answer && step < 4 && !retried) { setChosen(null); setRetried(true); return; }
-    setStep(step + 1); setChosen(null); setRetried(false);
+    if (!feedback) return;
+    if (feedback.retryNeeded) {
+      setState(current => current ? { ...current, retryPending: true, priorFeedback: feedback.feedback } : current);
+      setFeedback(null); setChosen(null);
+    } else if (feedback.completed) {
+      setState(current => current ? { ...current, status: "completed", transferCorrect: feedback.transferCorrect ?? 0 } : current);
+      setFeedback(null); setChosen(null);
+    } else void load();
   }
 
+  const current = state?.case;
   return <div className="sheet-backdrop library-backdrop" onClick={onClose}><section className="profile-sheet library-sheet" role="dialog" aria-modal="true" aria-labelledby="mission-title" onClick={event => event.stopPropagation()}>
     <button className="sheet-close" onClick={onClose} aria-label="Cerrar misión">×</button>
     <p className="eyebrow">BLOQUE 1 · MISIÓN 1.1</p><h2 id="mission-title">Conserva la acción central</h2>
-    {finished ? <><p className="practice-instructions">En dos oraciones nuevas identificaste la acción central {transferCorrect} de 2 veces en el primer intento.</p>
-      <p className="answer-feedback">{transferCorrect === 2 ? "Buen comienzo. Para acreditar esta habilidad necesitarás demostrarla también con otros materiales en una sesión posterior." : "Revisa qué hizo cada persona y a qué acción afecta la negación o el detalle; vuelve a intentarlo con oraciones nuevas más adelante."}</p>
-      <p className="practice-instructions">Esta exploración no desbloquea la siguiente lección ni acredita un club.</p>
+    {!state && !error && <p className="practice-instructions" role="status">Preparando tu misión…</p>}
+    {state?.status === "completed" ? <>
+      <p className="practice-instructions">Identificaste la acción central {state.transferCorrect} de 2 veces en el primer intento de las oraciones nuevas. Tu sesión quedó guardada.</p>
+      <p className="answer-feedback">{state.transferCorrect === 2 ? "Buen comienzo. El dominio requiere más casos nuevos y recuperación en otra sesión." : "Vuelve a practicar. En la próxima sesión encontrarás oraciones distintas para comprobar tu avance."}</p>
+      <p className="practice-instructions">Este resultado no certifica la habilidad ni desbloquea todavía la 1.2.</p>
       <button className="primary-cta" onClick={onClose}>Volver a la ruta</button>
-    </> : <>
-      <p className="practice-instructions">{step < 2 ? "Descubre quién hizo qué, incluso cuando hay detalles en medio." : step < 4 ? "Ahora cambia el orden y observa la negación." : "Aplica la habilidad sin pistas en una oración nueva."}</p>
-      <div className="mission-progress">{step < 2 ? "Primer intento" : step < 4 ? "Práctica con corrección" : "Aplicación sin ayuda"} · {step + 1} de {cases.length}</div>
+    </> : current && <>
+      <p className="practice-instructions">{current.role === "probe" ? "Descubre quién hizo qué, incluso con detalles en medio." : current.role === "guided" ? "Observa el orden y la negación. Si fallas, vuelve a intentarlo con una pista." : "Aplica lo aprendido en una oración nueva sin pistas previas."}</p>
+      <div className="mission-progress">{current.role === "probe" ? "Primer intento" : current.role === "guided" ? "Práctica con corrección" : "Aplicación sin ayuda"} · {current.step} de 6</div>
       <div className="passage exercise-context">{current.sentence}</div>
       <p className="form-label">{current.question}</p>
-      <div className="answer-list">{current.options.map((option, index) => <button key={option} className={`answer-option ${chosen === index ? "chosen" : ""}`} disabled={chosen !== null} onClick={() => choose(index)}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div>
-      {chosen !== null && <p className="answer-feedback" role="status">{current.feedback[chosen]}</p>}
-      {retried && chosen === null && <p className="practice-instructions">Inténtalo otra vez. Busca la acción principal antes de los detalles.</p>}
-      <button className="primary-cta practice-action" disabled={chosen === null} onClick={next}>{chosen !== null && chosen !== current.answer && step < 4 && !retried ? "Volver a intentar" : "Continuar"}</button>
+      <div className="answer-list">{current.options.map((option, index) => <button key={`${current.step}-${index}`} className={`answer-option ${chosen === index ? "chosen" : ""}`} disabled={busy || chosen !== null} onClick={() => { void choose(index); }}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div>
+      {state.retryPending && !feedback && <p className="practice-instructions" role="status">{state.priorFeedback} Inténtalo otra vez.</p>}
+      {feedback && <><p className="answer-feedback" role="status">{feedback.feedback}</p><button className="primary-cta practice-action" onClick={next}>{feedback.retryNeeded ? "Volver a intentar" : "Continuar"}</button></>}
     </>}
+    {error && <><p className="inline-error" role="alert">{error}</p>{!state && <button className="secondary-action" onClick={() => { void load(); }}>Reintentar</button>}</>}
   </section></div>;
 }

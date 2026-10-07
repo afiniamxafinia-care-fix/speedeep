@@ -8,7 +8,7 @@ import MissionOne from "@/app/components/MissionOne";
 type IconName = "home" | "route" | "arena" | "practice" | "profile" | "arrow" | "book" | "spark" | "heart" | "camera" | "close" | "target";
 type PracticeQuestion = { id: string; prompt: string; options: string[] };
 type PracticeData = { article: { id: string; title: string; body: string; word_count: number; estimated_minutes: number }; questions: PracticeQuestion[] };
-type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; comprehension: number | null; practicesCount: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null };
+type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; comprehension: number | null; practicesCount: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; completedCount: number; lastTransferCorrect: number | null } };
 type Tab = "Home" | "Ruta" | "Arena" | "Prácticas" | "Perfil";
 const tabs: Tab[] = ["Home", "Ruta", "Arena", "Prácticas", "Perfil"];
 const clubs = [300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500];
@@ -305,11 +305,11 @@ export default function Home() {
         </section>
 
         <section className="practice-nudge" aria-label="Continuar la ruta">
-          <span className="nudge-icon"><Icon name="route"/></span><div><strong>Tu próximo paso está en Ruta</strong><p>Aprende una habilidad y úsala en una lectura nueva.</p></div><button onClick={() => navigate("Ruta")} aria-label="Abrir ruta"><Icon name="arrow"/></button>
+          <span className="nudge-icon"><Icon name="route"/></span><div><strong>{dashboard?.curriculum.activeStep ? "Retoma tu misión 1.1" : "Tu próximo paso está en Ruta"}</strong><p>{dashboard?.curriculum.activeStep ? `Quedaste en el paso ${dashboard.curriculum.activeStep} de 6.` : "Aprende una habilidad y úsala en una lectura nueva."}</p></div><button onClick={() => navigate("Ruta")} aria-label="Abrir ruta"><Icon name="arrow"/></button>
         </section>
         </>}
 
-        {activeTab === "Ruta" && <Curriculum onStart={() => setMissionOpen(true)}/>}
+        {activeTab === "Ruta" && <Curriculum activeStep={dashboard?.curriculum.activeStep} completedCount={dashboard?.curriculum.completedCount} onStart={() => { if (!user) setAuthOpen(true); else setMissionOpen(true); }}/>}
 
         {activeTab === "Arena" && <section className="section-page" aria-labelledby="arena-heading">
           <p className="eyebrow">COMPETENCIA ENTRE LECTORES</p><h1 id="arena-heading">Arena</h1>
@@ -341,7 +341,7 @@ export default function Home() {
       </nav>
 
       {libraryKind && <PracticeLibrary initialKind={libraryKind} onClose={() => setLibraryKind(null)} onRead={id => { setLibraryKind(null); void startPractice(id); }}/>} 
-      {missionOpen && <MissionOne onClose={() => setMissionOpen(false)}/>}
+      {missionOpen && <MissionOne onClose={() => { setMissionOpen(false); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }}/>}
 
       {profileOpen && <div className="sheet-backdrop" onClick={() => setProfileOpen(false)}><section className="profile-sheet" role="dialog" aria-modal="true" aria-labelledby="profile-title" onClick={(event) => event.stopPropagation()}>
         <div className="sheet-handle"/><button className="sheet-close" onClick={() => setProfileOpen(false)} aria-label="Cerrar perfil"><Icon name="close"/></button>

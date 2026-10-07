@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 
 type Case = { step: number; role: "probe" | "guided" | "transfer"; sentence: string; question: string; options: string[] };
-type State = { attemptId: string; status: "active" | "completed"; variant: string; case?: Case; retryPending?: boolean; priorFeedback?: string | null; transferCorrect?: number };
-type Feedback = { feedback: string; correct: boolean; retryNeeded: boolean; completed: boolean; transferCorrect: number | null };
+type State = { attemptId: string; status: "active" | "completed"; variant: string; case?: Case; retryPending?: boolean; priorFeedback?: string | null; transferCorrect?: number; integrationPassed?: boolean | null };
+type Feedback = { feedback: string; correct: boolean; retryNeeded: boolean; completed: boolean; transferCorrect: number | null; integrationPassed?: boolean | null };
 
-export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" | "1.2" | "1.3"; onClose: () => void }) {
+export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" | "1.2" | "1.3" | "1.4" | "1.C"; onClose: () => void }) {
   const [state, setState] = useState<State | null>(null);
   const [chosen, setChosen] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
@@ -54,13 +54,15 @@ export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" 
       setState(current => current ? { ...current, retryPending: true, priorFeedback: feedback.feedback } : current);
       setFeedback(null); setChosen(null);
     } else if (feedback.completed) {
-      setState(current => current ? { ...current, status: "completed", transferCorrect: feedback.transferCorrect ?? 0 } : current);
+      setState(current => current ? { ...current, status: "completed", transferCorrect: feedback.transferCorrect ?? 0, integrationPassed: feedback.integrationPassed } : current);
       setFeedback(null); setChosen(null);
     } else void load();
   }
 
   const current = state?.case;
-  const instruction = lessonCode === "1.3"
+  const instruction = lessonCode === "1.C" ? "Resuelve con lo que sabes, sin pistas."
+    : lessonCode === "1.4" ? current?.step === 1 ? "Recuerda qué cambia el conector." : current?.step === 4 || current?.step === 6 ? "Decide si necesitas consultar un dato exacto." : "Usa las pistas de la oración."
+    : lessonCode === "1.3"
     ? current?.step === 1 ? "Recuerda la acción central." : current?.step === 2 ? "Agrupa las palabras que van juntas." : current?.role === "transfer" ? "Sigue el cambio de sentido sin pistas." : "Observa qué cambia con el conector."
     : lessonCode === "1.2"
     ? current?.step === 1 ? "Recuerda la acción central." : current?.role === "transfer" ? "Forma una idea completa." : "Encuentra las palabras que van juntas."
@@ -68,16 +70,15 @@ export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" 
   return <div className="sheet-backdrop library-backdrop" onClick={onClose}><section className="profile-sheet library-sheet mission-sheet" role="dialog" aria-modal="true" aria-labelledby="mission-title" onClick={event => event.stopPropagation()}>
     <header className="mission-header">
       <button className="sheet-close" onClick={onClose} aria-label="Cerrar misión">×</button>
-      <p className="eyebrow">BLOQUE 1 · LECCIÓN {lessonCode}</p>
-      <h2 id="mission-title">{lessonCode === "1.1" ? "Conserva la acción central" : lessonCode === "1.2" ? "Une palabras que van juntas" : "Sigue el giro de los conectores"}</h2>
+      <p className="eyebrow">BLOQUE 1 · {lessonCode === "1.C" ? "CIERRE" : `LECCIÓN ${lessonCode}`}</p>
+      <h2 id="mission-title">{lessonCode === "1.1" ? "Conserva la acción central" : lessonCode === "1.2" ? "Une palabras que van juntas" : lessonCode === "1.3" ? "Sigue el giro de los conectores" : lessonCode === "1.4" ? "Resuelve vocabulario sin perder el hilo" : "Comprende oraciones nuevas"}</h2>
       {current && state?.status !== "completed" && <div className="mission-progress">{current.role === "probe" ? "Explora" : current.role === "guided" ? "Practica" : "Aplica"} · {current.step} de 6</div>}
     </header>
     <div className="mission-body">
       {!state && !error && <p className="practice-instructions" role="status">Preparando la lección…</p>}
       {state?.status === "completed" ? <div className="mission-complete">
-        <strong>Lección completada</strong>
-        <p>{state.transferCorrect} de 2 respuestas correctas al primer intento en oraciones nuevas.</p>
-        <p>{state.transferCorrect === 2 ? "Volverás a usar esta habilidad más adelante." : "Seguirás practicando esta habilidad con oraciones nuevas."}</p>
+        <strong>{lessonCode === "1.C" ? "Ronda terminada" : "Lección completada"}</strong>
+        {lessonCode === "1.C" ? <><p>{state.transferCorrect} de 6 respuestas correctas al primer intento.</p><p>{state.integrationPassed ? "Comprobaste las habilidades de este bloque con oraciones nuevas." : "En Ruta puedes practicar y resolver otra ronda con oraciones nuevas."}</p></> : <><p>{state.transferCorrect} de 2 respuestas correctas al primer intento en oraciones nuevas.</p><p>{state.transferCorrect === 2 ? "Volverás a usar esta habilidad más adelante." : "Seguirás practicando esta habilidad con oraciones nuevas."}</p></>}
         <button className="primary-cta" onClick={onClose}>Volver a la ruta</button>
       </div> : current && <>
         <p className="mission-instruction">{instruction}</p>

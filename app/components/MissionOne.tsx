@@ -60,24 +60,35 @@ export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" 
   }
 
   const current = state?.case;
-  return <div className="sheet-backdrop library-backdrop" onClick={onClose}><section className="profile-sheet library-sheet" role="dialog" aria-modal="true" aria-labelledby="mission-title" onClick={event => event.stopPropagation()}>
-    <button className="sheet-close" onClick={onClose} aria-label="Cerrar misión">×</button>
-    <p className="eyebrow">BLOQUE 1 · MISIÓN {lessonCode}</p><h2 id="mission-title">{lessonCode === "1.1" ? "Conserva la acción central" : "Une palabras que van juntas"}</h2>
-    {!state && !error && <p className="practice-instructions" role="status">Preparando tu misión…</p>}
-    {state?.status === "completed" ? <>
-      <p className="practice-instructions">{lessonCode === "1.1" ? "Identificaste la acción central" : "Agrupaste palabras para conservar el sentido"} {state.transferCorrect} de 2 veces en el primer intento de las oraciones nuevas. Tu sesión quedó guardada.</p>
-      <p className="answer-feedback">{state.transferCorrect === 2 ? "Buen trabajo. Volveremos a comprobar esta habilidad con oraciones distintas en otra sesión." : lessonCode === "1.1" ? "Encontraste algunas acciones centrales. Las siguientes oraciones te ayudarán a afinarlo." : "Sigue practicando qué palabras forman una idea completa. Volverás a aplicarlo en oraciones nuevas."}</p>
-      <p className="practice-instructions">La habilidad se seguirá comprobando con material nuevo en las próximas misiones.</p>
-      <button className="primary-cta" onClick={onClose}>Volver a la ruta</button>
-    </> : current && <>
-      <p className="practice-instructions">{lessonCode === "1.2" ? current.step === 1 ? "Antes de avanzar, recuerda qué acción ocurrió en esta oración nueva." : current.role === "transfer" ? "Agrupa las palabras que expresan una idea completa, sin pistas." : "Observa qué palabras forman una unidad de sentido. Si fallas, usa la pista y vuelve a intentarlo." : current.role === "probe" ? "Descubre quién hizo qué, incluso con detalles en medio." : current.role === "guided" ? "Observa el orden y la negación. Si fallas, vuelve a intentarlo con una pista." : "Aplica lo aprendido en una oración nueva sin pistas previas."}</p>
-      <div className="mission-progress">{current.role === "probe" ? "Explora" : current.role === "guided" ? "Practica" : "Aplica sin ayuda"} · {current.step} de 6</div>
-      <div className="passage exercise-context">{current.sentence}</div>
-      <p className="form-label">{current.question}</p>
-      <div className="answer-list">{current.options.map((option, index) => <button key={`${current.step}-${index}`} className={`answer-option ${chosen === index ? "chosen" : ""}`} disabled={busy || chosen !== null} onClick={() => { void choose(index); }}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div>
-      {state.retryPending && !feedback && <p className="practice-instructions" role="status">{state.priorFeedback} Inténtalo otra vez.</p>}
-      {feedback && <><p className="answer-feedback" role="status">{feedback.feedback}</p><button className="primary-cta practice-action" onClick={next}>{feedback.retryNeeded ? "Volver a intentar" : "Continuar"}</button></>}
-    </>}
-    {error && <><p className="inline-error" role="alert">{error}</p>{!state && <button className="secondary-action" onClick={() => { void load(); }}>Reintentar</button>}</>}
+  const instruction = lessonCode === "1.2"
+    ? current?.step === 1 ? "Recuerda la acción central." : current?.role === "transfer" ? "Forma una idea completa." : "Encuentra las palabras que van juntas."
+    : current?.role === "probe" ? "Encuentra la acción central." : current?.role === "guided" ? "Sigue quién hizo qué." : "Resuelve sin pistas.";
+  return <div className="sheet-backdrop library-backdrop" onClick={onClose}><section className="profile-sheet library-sheet mission-sheet" role="dialog" aria-modal="true" aria-labelledby="mission-title" onClick={event => event.stopPropagation()}>
+    <header className="mission-header">
+      <button className="sheet-close" onClick={onClose} aria-label="Cerrar misión">×</button>
+      <p className="eyebrow">BLOQUE 1 · LECCIÓN {lessonCode}</p>
+      <h2 id="mission-title">{lessonCode === "1.1" ? "Conserva la acción central" : "Une palabras que van juntas"}</h2>
+      {current && state?.status !== "completed" && <div className="mission-progress">{current.role === "probe" ? "Explora" : current.role === "guided" ? "Practica" : "Aplica"} · {current.step} de 6</div>}
+    </header>
+    <div className="mission-body">
+      {!state && !error && <p className="practice-instructions" role="status">Preparando la lección…</p>}
+      {state?.status === "completed" ? <div className="mission-complete">
+        <strong>Lección completada</strong>
+        <p>{state.transferCorrect} de 2 respuestas correctas al primer intento en oraciones nuevas.</p>
+        <p>{state.transferCorrect === 2 ? "Volverás a usar esta habilidad más adelante." : "Seguirás practicando esta habilidad con oraciones nuevas."}</p>
+        <button className="primary-cta" onClick={onClose}>Volver a la ruta</button>
+      </div> : current && <>
+        <p className="mission-instruction">{instruction}</p>
+        <div className="passage exercise-context">{current.sentence}</div>
+        <p className="mission-question">{current.question}</p>
+        <div className="answer-list">{current.options.map((option, index) => <button key={`${current.step}-${index}`} className={`answer-option ${chosen === index ? "chosen" : ""}`} disabled={busy || chosen !== null} onClick={() => { void choose(index); }}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div>
+      </>}
+    </div>
+    {state?.status !== "completed" && <div className="mission-response" aria-live="polite">
+      {feedback ? <><p className="answer-feedback">{feedback.feedback}</p><button className="primary-cta" onClick={next}>{feedback.retryNeeded ? "Intentar de nuevo" : "Continuar"}</button></>
+        : error ? <><p className="inline-error" role="alert">{error}</p>{!state && <button className="secondary-action" onClick={() => { void load(); }}>Reintentar</button>}</>
+        : state?.retryPending ? <p className="mission-response-hint">{state.priorFeedback} Prueba otra vez.</p>
+        : <p className="mission-response-hint">{busy ? "Guardando respuesta…" : current ? "Elige una respuesta para continuar." : ""}</p>}
+    </div>}
   </section></div>;
 }

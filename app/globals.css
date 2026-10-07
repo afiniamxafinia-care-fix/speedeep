@@ -129,6 +129,27 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid rgba(
 .route-anchor>strong{display:block;margin:7px 0;font:800 19px/1.3 Manrope,sans-serif}
 .route-anchor p{margin:0 0 12px;color:#405b6e;font-size:12px;line-height:1.55}
 .route-anchor .mission-launch{margin:3px 0 10px}
+
+/* The lesson keeps its position when feedback appears. Only the exercise body scrolls. */
+.mission-sheet{height:85dvh;max-height:85dvh;display:flex;flex-direction:column;overflow:hidden;padding:0;background:#fff}
+.mission-header{position:relative;flex:none;padding:23px 24px 11px;border-bottom:1px solid #e5edf0}
+.mission-header .eyebrow{margin:0;color:#657a8b;font-size:11px;letter-spacing:.08em}
+.mission-header h2{margin:8px 36px 11px 0;padding:0;font-size:clamp(22px,5.6vw,28px);line-height:1.17}
+.mission-header .mission-progress{margin:0;color:#087f8f;font-size:13px;line-height:1.5}
+.mission-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:17px 24px 20px}
+.mission-instruction{margin:0 0 11px;color:#53677d;font-size:15px;line-height:1.45}
+.mission-body .exercise-context{margin:0 0 20px;padding:18px;border-color:#daeaf0;background:#f7f9fc;color:#142a43;font-size:18px;line-height:1.55}
+.mission-question{margin:0 0 11px;color:#142a43;font-size:17px;font-weight:800;line-height:1.4}
+.mission-body .answer-list{margin:0;gap:10px}
+.mission-body .answer-option{min-height:56px;padding:11px 13px;color:#243c54;font-size:16px;line-height:1.35}
+.mission-body .answer-option span{width:30px;height:30px;font-size:14px}
+.mission-sheet .answer-option:disabled{opacity:1}
+.mission-response{flex:none;min-height:126px;max-height:32dvh;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;gap:9px;padding:13px 24px calc(15px + env(safe-area-inset-bottom));border-top:1px solid #e5edf0;background:#fff}
+.mission-response .answer-feedback,.mission-response .inline-error{margin:0;font-size:14px;line-height:1.4}
+.mission-response .primary-cta{width:100%;min-height:46px;margin:0}
+.mission-response-hint{margin:0;color:#718095;font-size:14px;line-height:1.45}
+.mission-complete strong{display:block;color:#142a43;font-size:20px}.mission-complete p{font-size:16px;line-height:1.5;color:#53677d}.mission-complete .primary-cta{width:100%}
+@media(max-height:650px){.mission-header{padding-top:17px;padding-bottom:8px}.mission-header h2{margin-bottom:6px}.mission-response{min-height:100px;padding-top:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom))}}
 .route-anchor>small{display:block;color:#718095;font-size:10px;line-height:1.45}
 .home-anchor{margin:0 0 15px;padding:13px 15px;border:1px solid #bde7e8;border-radius:17px;background:#eafafa;color:#142a43}
 .home-anchor strong,.home-anchor span,.home-anchor small{display:block}

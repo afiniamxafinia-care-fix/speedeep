@@ -1,10 +1,12 @@
 import { ApiError, apiErrorResponse, requireAccessToken, supabaseFetch } from "@/app/lib/supabase";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const token = await requireAccessToken();
+    const lessonCode = new URL(request.url).searchParams.get("lessonCode") ?? "1.1";
+    if (!["1.1", "1.2"].includes(lessonCode)) throw new ApiError("Esta lección no está disponible.", 422);
     const state = await supabaseFetch("/rest/v1/rpc/begin_curriculum_lesson", token, {
-      method: "POST", body: JSON.stringify({ p_lesson_code: "1.1" }),
+      method: "POST", body: JSON.stringify({ p_lesson_code: lessonCode }),
     });
     return Response.json(state);
   } catch (error) { return apiErrorResponse(error); }

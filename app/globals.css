@@ -125,3 +125,11 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid rgba(
 .diagnostic-reading-closed p{margin:0 0 10px;color:#718095;font-size:12px}
 .diagnostic-reading-closed .secondary-action,.diagnostic-reading .secondary-action{margin-top:0}
 .diagnostic-reading .passage{margin-bottom:10px}
+.route-anchor{margin:15px 0 22px;padding:18px;border:1px solid #bde7e8;border-radius:20px;background:linear-gradient(120deg,#eafafa,#f7f9fc);color:#142a43}
+.route-anchor>strong{display:block;margin:7px 0;font:800 19px/1.3 Manrope,sans-serif}
+.route-anchor p{margin:0 0 12px;color:#405b6e;font-size:12px;line-height:1.55}
+.route-anchor .mission-launch{margin:3px 0 10px}
+.route-anchor>small{display:block;color:#718095;font-size:10px;line-height:1.45}
+.home-anchor{margin:0 0 15px;padding:13px 15px;border:1px solid #bde7e8;border-radius:17px;background:#eafafa;color:#142a43}
+.home-anchor strong,.home-anchor span,.home-anchor small{display:block}
+.home-anchor strong{font-size:13px}.home-anchor span{margin-top:5px;font-size:11px;line-height:1.5}.home-anchor small{margin-top:6px;color:#678291;font-size:9px}

@@ -10,7 +10,9 @@ import FlashNumbers from "@/app/components/FlashNumbers";
 type IconName = "home" | "route" | "arena" | "practice" | "profile" | "arrow" | "book" | "spark" | "heart" | "camera" | "close" | "target";
 type PracticeQuestion = { id: string; prompt: string; options: string[] };
 type PracticeData = { article: { id: string; title: string; body: string; word_count: number; estimated_minutes: number }; questions: PracticeQuestion[] };
-type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; comprehension: number | null; practicesCount: number; readingsCount: number; trainingCount: number; flashRounds: number; diagnosticCompleted: boolean; lessonsCompleted: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; completedCount: number; lastTransferCorrect: number | null; sentenceActionState: "not_started" | "completed" | "demonstrated"; diagnosticStatus: "not_started" | "active" | "completed"; diagnosticStep: number | null }; lab: { numbersRank: number; numbersRounds: number } };
+type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; comprehension: number | null; practicesCount: number; readingsCount: number; trainingCount: number; flashRounds: number; diagnosticCompleted: boolean; lessonsCompleted: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; activeLessonCode: string | null; completedCount: number; lastTransferCorrect: number | null; sentenceActionState: "not_started" | "completed" | "demonstrated"; sentenceChunkState: "not_started" | "completed"; diagnosticStatus: "not_started" | "active" | "completed"; diagnosticStep: number | null }; lab: { numbersRank: number; numbersRounds: number } };
+type Anchor = { nextArticleId: string | null; baselinePpm: number | null; baselineComprehension: number | null; comparisonPpm: number | null; comparisonComprehension: number | null; deltaPpm: number | null };
+type DashboardWithAnchor = Dashboard & { anchor: Anchor };
 type Tab = "Home" | "Ruta" | "Arena" | "Prácticas" | "Perfil";
 const tabs: Tab[] = ["Home", "Ruta", "Arena", "Prácticas", "Perfil"];
 const clubs = [300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500];
@@ -42,7 +44,7 @@ function UserAvatar({ photo, initials, variant = "avatar-aqua", className = "" }
 }
 
 export default function Home() {
-  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [dashboard, setDashboard] = useState<DashboardWithAnchor | null>(null);
   const [user, setUser] = useState<{ email: string; name: string } | null>(null);
   const [, setLoading] = useState(true);
   const [appError, setAppError] = useState("");
@@ -56,15 +58,18 @@ export default function Home() {
   const [authError, setAuthError] = useState("");
   const ppm = dashboard?.stats.latestPpm ?? null;
   const comprehension = dashboard?.stats.comprehension ?? null;
+  const visiblePpm = ppm ?? dashboard?.anchor.comparisonPpm ?? dashboard?.anchor.baselinePpm ?? null;
+  const visibleComprehension = comprehension ?? dashboard?.anchor.comparisonComprehension ?? dashboard?.anchor.baselineComprehension ?? null;
   const displayName = dashboard?.user.name ?? user?.name ?? "Lector";
   const [activeTab, setActiveTab] = useState<Tab>("Home");
   const [profileOpen, setProfileOpen] = useState(false);
-  const [missionOpen, setMissionOpen] = useState(false);
+  const [missionCode, setMissionCode] = useState<"1.1" | "1.2" | null>(null);
   const [diagnosticOpen, setDiagnosticOpen] = useState(false);
   const [flashOrigin, setFlashOrigin] = useState<"route" | "lab" | "diagnostic" | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string>();
   const [avatar, setAvatar] = useState(profileAvatars[0]);
   const [practiceOpen, setPracticeOpen] = useState(false);
+  const [practiceOrigin, setPracticeOrigin] = useState<"route" | "lab">("lab");
   const [libraryKind, setLibraryKind] = useState<PracticeKind | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
@@ -154,7 +159,7 @@ export default function Home() {
     setActiveTab("Prácticas"); setLibraryKind(kind);
   };
 
-  const startPractice = async (articleId?: string) => {
+  const startPractice = async (articleId?: string, origin: "route" | "lab" = "lab") => {
     setAppError("");
     if (!user) { setAuthOpen(true); setAuthError(""); return; }
     try {
@@ -171,7 +176,8 @@ export default function Home() {
       setSeconds(0);
       setFinished(false);
       setRunning(true);
-      setActiveTab("Prácticas");
+      setPracticeOrigin(origin);
+      setActiveTab(origin === "route" ? "Ruta" : "Prácticas");
       setPracticeOpen(true);
     } catch (error) {
       setAppError(error instanceof Error ? error.message : "No se pudo iniciar la práctica.");
@@ -231,6 +237,7 @@ export default function Home() {
     setFinished(false);
     setPractice(null);
     setPracticeTicket(null);
+    if (practiceOrigin === "route") navigate("Ruta");
   };
 
   const signOut = async () => {
@@ -299,10 +306,16 @@ export default function Home() {
         </section>
 
         <section className="metric-grid" aria-label="Tu progreso actual">
-          <article className="metric-card metric-ppm"><span className="metric-icon"><Icon name="target"/></span><span className="metric-label">Ritmo</span><strong>{ppm === null ? "—" : Math.round(ppm)}{ppm !== null && <small> ppm</small>}</strong><small className="metric-note">{ppm === null ? "calibrando con varias lecturas" : "mediana de lecturas válidas"}</small></article>
-          <article className="metric-card metric-comprehension"><span className="metric-icon"><Icon name="spark"/></span><span className="metric-label">Comprensión</span><strong>{comprehension === null ? "—" : comprehension}{comprehension !== null && <small>%</small>}</strong><small className="metric-note">{comprehension === null ? `${dashboard?.stats.readingsCount ?? 0} lecturas · se muestra con 3 válidas` : "promedio de lecturas válidas"}</small></article>
+          <article className="metric-card metric-ppm"><span className="metric-icon"><Icon name="target"/></span><span className="metric-label">Velocidad</span><strong>{visiblePpm === null ? "—" : Math.round(visiblePpm)}{visiblePpm !== null && <small> ppm</small>}</strong><small className="metric-note">{ppm !== null ? "mediana de lecturas válidas" : visiblePpm !== null ? "referencia inicial · provisional" : "haz tu lectura inicial en Ruta"}</small></article>
+          <article className="metric-card metric-comprehension"><span className="metric-icon"><Icon name="spark"/></span><span className="metric-label">Comprensión</span><strong>{visibleComprehension === null ? "—" : visibleComprehension}{visibleComprehension !== null && <small>%</small>}</strong><small className="metric-note">{comprehension !== null ? "promedio de lecturas válidas" : visibleComprehension !== null ? "referencia inicial · provisional" : "con la lectura inicial"}</small></article>
           <article className="metric-card metric-streak"><span className="metric-icon streak-icon">✦</span><span className="metric-label">QSD</span><strong>—</strong><small className="metric-note">Requiere evidencia de seis habilidades</small></article>
         </section>
+
+        {dashboard?.anchor.baselinePpm !== null && dashboard?.anchor.baselinePpm !== undefined && <section className="home-anchor" aria-label="Tu punto de partida">
+          <strong>Tu punto de partida: {dashboard.anchor.baselinePpm} ppm</strong>
+          <span>{dashboard.anchor.comparisonPpm !== null ? `Segunda lectura: ${dashboard.anchor.comparisonPpm} ppm (${dashboard.anchor.deltaPpm! > 0 ? "+" : ""}${dashboard.anchor.deltaPpm} ppm). Compara siempre junto con la comprensión.` : `Comprensión: ${dashboard.anchor.baselineComprehension}%. Tu siguiente lectura mostrará el cambio.`}</span>
+          <small>Referencia provisional; no acredita QSD ni un club.</small>
+        </section>}
 
         <section className="activity-summary" aria-label="Actividad registrada">
           <div><p className="eyebrow">TU ACTIVIDAD</p><h2>Lo que ya hiciste cuenta</h2></div>
@@ -331,11 +344,11 @@ export default function Home() {
         </section>
 
         <section className="practice-nudge" aria-label="Continuar la ruta">
-          <span className="nudge-icon"><Icon name="route"/></span><div><strong>{dashboard?.curriculum.diagnosticStatus !== "completed" ? "Descubre tu punto de partida" : dashboard?.curriculum.activeStep ? "Retoma tu misión 1.1" : "Tu próximo paso está en Ruta"}</strong><p>{dashboard?.curriculum.diagnosticStatus !== "completed" ? "Dos lecturas breves orientan tu plan." : dashboard?.curriculum.activeStep ? `Quedaste en el paso ${dashboard.curriculum.activeStep} de 6.` : "Aprende una habilidad y úsala en una lectura nueva."}</p></div><button onClick={() => navigate("Ruta")} aria-label="Abrir ruta"><Icon name="arrow"/></button>
+          <span className="nudge-icon"><Icon name="route"/></span><div><strong>{dashboard?.curriculum.diagnosticStatus !== "completed" ? "Descubre tu punto de partida" : dashboard?.anchor.baselinePpm === null ? "Haz tu lectura de referencia" : dashboard?.curriculum.activeStep ? `Retoma tu misión ${dashboard.curriculum.activeLessonCode}` : dashboard?.curriculum.completedCount === 1 ? "Continúa con la lección 1.2" : "Tu próximo paso está en Ruta"}</strong><p>{dashboard?.curriculum.diagnosticStatus !== "completed" ? "Dos lecturas breves orientan tu plan." : dashboard?.anchor.baselinePpm === null ? "Conoce tu PPM y comprensión iniciales." : dashboard?.curriculum.activeStep ? `Quedaste en el paso ${dashboard.curriculum.activeStep} de 6.` : "Aplica una habilidad y compárala en otra lectura."}</p></div><button onClick={() => navigate("Ruta")} aria-label="Abrir ruta"><Icon name="arrow"/></button>
         </section>
         </>}
 
-        {activeTab === "Ruta" && <Curriculum diagnosticStatus={dashboard?.curriculum.diagnosticStatus} diagnosticStep={dashboard?.curriculum.diagnosticStep} onDiagnostic={() => { if (!user) setAuthOpen(true); else setDiagnosticOpen(true); }} onFlash={() => { if (!user) setAuthOpen(true); else setFlashOrigin("route"); }} activeStep={dashboard?.curriculum.activeStep} completedCount={dashboard?.curriculum.completedCount} sentenceActionState={dashboard?.curriculum.sentenceActionState} onStart={() => { if (!user) setAuthOpen(true); else setMissionOpen(true); }}/>} 
+        {activeTab === "Ruta" && <Curriculum diagnosticStatus={dashboard?.curriculum.diagnosticStatus} diagnosticStep={dashboard?.curriculum.diagnosticStep} onDiagnostic={() => { if (!user) setAuthOpen(true); else setDiagnosticOpen(true); }} onFlash={() => { if (!user) setAuthOpen(true); else setFlashOrigin("route"); }} activeStep={dashboard?.curriculum.activeStep} activeLessonCode={dashboard?.curriculum.activeLessonCode} completedCount={dashboard?.curriculum.completedCount} sentenceActionState={dashboard?.curriculum.sentenceActionState} anchor={dashboard?.anchor} onReadAnchor={id => { void startPractice(id,"route"); }} onExploreReading={() => openLibrary("reading")} onStart={code => { if (!user) setAuthOpen(true); else setMissionCode(code); }}/>} 
 
         {activeTab === "Arena" && <section className="section-page" aria-labelledby="arena-heading">
           <p className="eyebrow">COMPETENCIA ENTRE LECTORES</p><h1 id="arena-heading">Arena</h1>
@@ -369,7 +382,7 @@ export default function Home() {
       </nav>
 
       {libraryKind && <PracticeLibrary initialKind={libraryKind} onClose={() => setLibraryKind(null)} onRead={id => { setLibraryKind(null); void startPractice(id); }}/>} 
-      {missionOpen && <MissionOne onClose={() => { setMissionOpen(false); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }}/>} 
+      {missionCode && <MissionOne key={missionCode} lessonCode={missionCode} onClose={() => { setMissionCode(null); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }}/>} 
       {diagnosticOpen && <Diagnostic onClose={() => { setDiagnosticOpen(false); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }} onFinish={() => { void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }} onCalibrate={() => { setDiagnosticOpen(false); setFlashOrigin("diagnostic"); }}/>} 
       {flashOrigin && <FlashNumbers origin={flashOrigin} onClose={() => { setFlashOrigin(null); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }}/>} 
 
@@ -385,8 +398,8 @@ export default function Home() {
 
       {practiceOpen && practice && <div className="sheet-backdrop practice-backdrop" onClick={endPractice}><section className="practice-sheet" role="dialog" aria-modal="true" aria-labelledby="practice-title" onClick={(event) => event.stopPropagation()}>
         <div className="sheet-handle"/><button className="sheet-close" onClick={endPractice} aria-label="Cerrar práctica"><Icon name="close"/></button>
-        <div className="practice-topline"><span>{finished ? "REVISA LO QUE LEÍSTE" : "LECTURA CRONOMETRADA"}</span><strong>{minutes}:{secs}</strong></div><h2 id="practice-title">{practiceResult ? "Práctica guardada" : practice.article.title}</h2>
-        {practiceResult ? <><p className="practice-instructions">Tu resultado quedó guardado en tu cuenta.</p><div className="result-grid"><div><strong>{Math.round(practiceResult.rawActivePpm)}</strong><span>ppm en esta lectura</span></div><div><strong>{practiceResult.comprehensionScore}%</strong><span>comprensión en esta práctica</span></div><div><strong>{practiceResult.correctAnswers}/{practiceResult.totalQuestions}</strong><span>respuestas</span></div></div><button className="primary-cta practice-action" onClick={endPractice}>Volver al inicio <Icon name="arrow"/></button></> : !finished ? <><p className="practice-instructions">Lee el texto a tu ritmo. El cronómetro mide solo esta lectura; al terminar, se detiene mientras respondes. Para una medición válida, lee durante al menos 10 segundos.</p><div className="passage">{practice.article.body}</div><button className="primary-cta practice-action" disabled={seconds < 10} onClick={() => { setRunning(false); setFinished(true); }}>{seconds < 10 ? "Lee un poco más…" : "Ya terminé de leer"} <Icon name="arrow"/></button></> : <><p className="practice-instructions">Responde para guardar la práctica. Tus respuestas se califican de forma segura.</p><div className="question-stack">{practice.questions.map((question, qIndex) => <div className="question-block" key={question.id}><strong>{qIndex + 1}. {question.prompt}</strong><div className="answer-list">{question.options.map((option, index) => <button key={`${question.id}-${index}`} className={`answer-option ${answers[question.id] === index ? "chosen" : ""}`} onClick={() => setAnswers((current) => ({ ...current, [question.id]: index }))}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div></div>)}</div>{appError && <p className="inline-error" role="alert">{appError}</p>}<button className="primary-cta practice-action" disabled={savingPractice || practice.questions.some((question) => answers[question.id] === undefined)} onClick={submitPractice}>{savingPractice ? "Guardando…" : "Guardar mi resultado"} <Icon name="arrow"/></button></>}
+        <div className="practice-topline"><span>{finished ? "REVISA LO QUE LEÍSTE" : practiceOrigin === "route" ? "TU LECTURA DE REFERENCIA" : "LECTURA CRONOMETRADA"}</span><strong>{minutes}:{secs}</strong></div><h2 id="practice-title">{practiceResult ? "Lectura guardada" : practice.article.title}</h2>
+        {practiceResult ? <><p className="practice-instructions">Tu resultado quedó guardado. Compara la velocidad siempre junto con la comprensión.</p><div className="result-grid"><div><strong>{Math.round(practiceResult.rawActivePpm)}</strong><span>ppm en esta lectura</span></div><div><strong>{practiceResult.comprehensionScore}%</strong><span>comprensión</span></div><div><strong>{practiceResult.correctAnswers}/{practiceResult.totalQuestions}</strong><span>respuestas</span></div></div>{practiceOrigin === "route" && practiceResult.comprehensionScore < 70 && <p className="practice-instructions">Esta lectura te da una observación inicial, pero necesitamos más comprensión en un texto nuevo para usar su PPM como referencia.</p>}<button className="primary-cta practice-action" onClick={endPractice}>{practiceOrigin === "route" ? "Volver a mi ruta" : "Volver a Prácticas"} <Icon name="arrow"/></button></> : !finished ? <><p className="practice-instructions">Lee el texto a tu ritmo. El cronómetro mide solo esta lectura; al terminar, se detiene mientras respondes. Para una medición válida, lee durante al menos 10 segundos.</p><div className="passage">{practice.article.body}</div><button className="primary-cta practice-action" disabled={seconds < 10} onClick={() => { setRunning(false); setFinished(true); }}>{seconds < 10 ? "Lee un poco más…" : "Ya terminé de leer"} <Icon name="arrow"/></button></> : <><p className="practice-instructions">Responde para guardar la práctica. Tus respuestas se califican de forma segura.</p><div className="question-stack">{practice.questions.map((question, qIndex) => <div className="question-block" key={question.id}><strong>{qIndex + 1}. {question.prompt}</strong><div className="answer-list">{question.options.map((option, index) => <button key={`${question.id}-${index}`} className={`answer-option ${answers[question.id] === index ? "chosen" : ""}`} onClick={() => setAnswers((current) => ({ ...current, [question.id]: index }))}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div></div>)}</div>{appError && <p className="inline-error" role="alert">{appError}</p>}<button className="primary-cta practice-action" disabled={savingPractice || practice.questions.some((question) => answers[question.id] === undefined)} onClick={submitPractice}>{savingPractice ? "Guardando…" : "Guardar mi resultado"} <Icon name="arrow"/></button></>}
       </section></div>}
 
       {authOpen && <div className="sheet-backdrop" onClick={() => setAuthOpen(false)}><section className="profile-sheet auth-sheet" role="dialog" aria-modal="true" aria-labelledby="auth-title" onClick={event => event.stopPropagation()}>

@@ -1,24 +1,60 @@
 "use client";
 
-const blocks = [
-  { title: "Construir el sentido de la oración", lessons: ["Conservar la acción central", "Unir palabras que van juntas", "Seguir el giro de los conectores", "Resolver vocabulario sin perder el hilo"] },
-  { title: "Construir la idea del párrafo", lessons: ["Decir de qué trata", "Separar idea y apoyo", "Conectar oraciones", "Conservar la esencia"] },
-  { title: "Relacionar partes de un texto", lessons: ["Seguir una secuencia", "Entender causas y efectos", "Reconocer contrastes", "Inferir con evidencia"] },
-  { title: "Controlar la comprensión y la atención", lessons: ["Detectar pérdida de sentido", "Elegir la reparación", "Volver al texto con propósito", "Recuperar el foco"] },
-  { title: "Ganar fluidez sin soltar el significado", lessons: ["Encontrar un ritmo útil", "Reducir pausas evitables", "Releer para mejorar", "Ajustar ante dificultad"] },
-  { title: "Elegir un modo de lectura", lessons: ["Leer con una pregunta", "Explorar", "Localizar", "Leer a fondo"] },
-  { title: "Recordar y usar información", lessons: ["Recuperar sin mirar", "Organizar lo aprendido", "Explicar a alguien", "Recordar después"] },
-  { title: "Transferir a la vida real", lessons: ["Entender instrucciones", "Decidir con información", "Evaluar una afirmación", "Misión elegida por el lector"] },
-];
+const currentLevel = {
+  label: "Nivel 1.1",
+  title: "Entender oraciones",
+  mission: "Descubre quién hizo qué, incluso cuando hay detalles, giros y palabras nuevas.",
+  lessons: [
+    { title: "Conservar la acción central", description: "Encuentra la acción principal aunque haya detalles en medio." },
+    { title: "Unir palabras que van juntas", description: "Agrupa las partes de una oración para conservar el sentido." },
+    { title: "Seguir el giro de los conectores", description: "Descubre cómo cambia una idea con «pero», «porque» o «aunque»." },
+    { title: "Resolver vocabulario sin perder el hilo", description: "Usa el contexto y decide cuándo necesitas una aclaración." },
+  ],
+};
 
-export default function Curriculum({ onStart, onDiagnostic, diagnosticStatus, diagnosticStep, activeStep, completedCount }: { onStart: () => void; onDiagnostic: () => void; diagnosticStatus?: "not_started" | "active" | "completed"; diagnosticStep?: number | null; activeStep?: number | null; completedCount?: number }) {
-  return <section className="section-page" aria-labelledby="route-heading">
-    <p className="eyebrow">TU PLAN DE ESTUDIOS</p><h1 id="route-heading">Ruta de lectura</h1>
-    <p>32 misiones en ocho bloques. Cada misión enseña una acción que aplicarás en textos nuevos.</p>
-    <div className="route-notice"><strong>{diagnosticStatus === "completed" ? "Tu punto de partida quedó guardado" : "Descubre tu punto de partida"}</strong><span>{diagnosticStatus === "completed" ? "Empieza con la primera habilidad. El diagnóstico orienta tu enseñanza y no certifica dominio; podrás revisar tus resultados aquí." : "Lee dos textos nuevos a tu ritmo y responde preguntas de comprensión. Puedes interrumpir y retomar."}</span><button className="mission-launch diagnostic-launch" onClick={onDiagnostic}>{diagnosticStatus === "completed" ? "Ver resultado" : diagnosticStatus === "active" ? `Retomar pregunta ${diagnosticStep ?? 1}/10` : "Comenzar diagnóstico"}</button></div>
-    <div className="block-list">{blocks.map((block, index) => <article className="block-card" key={block.title}>
-      <div className="block-heading"><span>Bloque {index + 1}</span><strong>{block.title}</strong></div>
-      <ol>{block.lessons.map((lesson, lessonIndex) => <li key={lesson}><span>{index + 1}.{lessonIndex + 1}</span>{lesson}{index === 0 && lessonIndex === 0 ? <button className="mission-launch" onClick={onStart}>{activeStep ? `Retomar · ${activeStep}/6` : completedCount ? "Practicar otra variante" : "Abrir misión"}</button> : <small title="Esta misión aún no está publicada">Próximamente</small>}</li>)}</ol>
-    </article>)}</div>
+type Props = {
+  onStart: () => void;
+  onDiagnostic: () => void;
+  diagnosticStatus?: "not_started" | "active" | "completed";
+  diagnosticStep?: number | null;
+  activeStep?: number | null;
+  completedCount?: number;
+};
+
+export default function Curriculum({ onStart, onDiagnostic, diagnosticStatus, diagnosticStep, activeStep, completedCount = 0 }: Props) {
+  const practicedFirst = completedCount > 0;
+  return <section className="section-page learning-route" aria-labelledby="route-heading">
+    <p className="eyebrow">TU RUTA · {currentLevel.label.toUpperCase()}</p>
+    <h1 id="route-heading">{currentLevel.title}</h1>
+    <p>{currentLevel.mission}</p>
+
+    <div className="route-notice route-intro">
+      <strong>{diagnosticStatus === "completed" ? "Tu punto de partida está listo" : "Empieza por descubrir tu punto de partida"}</strong>
+      <span>{diagnosticStatus === "completed" ? "Ya guardamos tu diagnóstico. Puedes consultar el resultado y seguir con tu primera misión." : "Dos lecturas breves orientan tu ruta. Puedes detenerte y retomarlas después."}</span>
+      <button className="mission-launch diagnostic-launch" onClick={onDiagnostic}>{diagnosticStatus === "completed" ? "Ver diagnóstico" : diagnosticStatus === "active" ? `Retomar · pregunta ${diagnosticStep ?? 1}/10` : "Hacer diagnóstico"}</button>
+    </div>
+
+    <div className="route-level-title">
+      <div><span>MI RUTA</span><h2>Una habilidad a la vez.</h2></div>
+      <small>{currentLevel.lessons.length} lecciones</small>
+    </div>
+
+    <ol className="route-steps" aria-label={`Lecciones de ${currentLevel.label}`}>
+      {currentLevel.lessons.map((lesson, index) => {
+        const available = index === 0;
+        return <li key={lesson.title} className={`route-step ${available ? "route-step-current" : "route-step-locked"}`}>
+          <span className="route-step-marker" aria-hidden="true">{available ? "○" : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>}</span>
+          <div className="route-step-copy">
+            <span>{currentLevel.label.toUpperCase()} · LECCIÓN {index + 1}</span>
+            <strong>{lesson.title}</strong>
+            <small>{available ? activeStep ? `Retoma el paso ${activeStep} de 6` : practicedFirst ? "Practicada · continúa consolidando esta habilidad" : lesson.description : "Esta lección está en preparación"}</small>
+          </div>
+          {available ? <button className="route-step-action" aria-label={`${activeStep ? "Retomar" : practicedFirst ? "Volver a practicar" : "Abrir"} lección 1: ${lesson.title}`} onClick={onStart}>{activeStep ? "Seguir" : practicedFirst ? "Repetir" : "Empezar"}<span aria-hidden="true">→</span></button>
+            : <span className="route-step-status">Próximamente</span>}
+        </li>;
+      })}
+    </ol>
+
+    <div className="route-next-level"><span>DESPUÉS</span><strong>Construir la idea del párrafo</strong><small>El siguiente nivel aparecerá cuando esta parte de la ruta esté lista.</small></div>
   </section>;
 }

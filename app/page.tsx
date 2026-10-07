@@ -46,8 +46,9 @@ export default function Home() {
   const [appError, setAppError] = useState("");
   const [authOpen, setAuthOpen] = useState(false);
   const [authEmail, setAuthEmail] = useState("");
-  const [authCode, setAuthCode] = useState("");
-  const [codeSent, setCodeSent] = useState(false);
+  const [authPassword, setAuthPassword] = useState("");
+  const [authConfirm, setAuthConfirm] = useState("");
+  const [authMode, setAuthMode] = useState<"login" | "register" | "recover" | "newPassword">("login");
   const [authBusy, setAuthBusy] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [authError, setAuthError] = useState("");
@@ -102,9 +103,12 @@ export default function Home() {
         if (linkAccessToken && linkRefreshToken) {
           const callback = await fetch("/api/auth/callback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accessToken: linkAccessToken, refreshToken: linkRefreshToken, expiresIn: hash.get("expires_in") }) });
           const callbackData = await callback.json();
-          window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.hash = ""; cleanUrl.searchParams.delete("auth");
+          window.history.replaceState({}, document.title, cleanUrl);
           if (!callback.ok) throw new Error(callbackData.error ?? "El enlace venció. Solicita otro código.");
           signedInUser = callbackData.user;
+          if (hash.get("type") === "recovery") { setAuthMode("newPassword"); setAuthOpen(true); }
         } else {
           const response = await fetch("/api/auth/session");
           const data = await response.json();
@@ -168,28 +172,30 @@ export default function Home() {
     }
   };
 
-  const requestCode = async () => {
+  const submitAuth = async () => {
     setAuthBusy(true); setAuthError(""); setAuthMessage("");
     try {
-      const response = await fetch("/api/auth/request", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: authEmail }) });
+      if ((authMode === "register" || authMode === "newPassword") && authPassword !== authConfirm) {
+        throw new Error("Las contraseñas no coinciden.");
+      }
+      const endpoint = authMode === "newPassword" ? "password" : authMode;
+      const response = await fetch(`/api/auth/${endpoint}`, {
+        method: authMode === "newPassword" ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(authMode === "newPassword" ? { password: authPassword } : { email: authEmail, password: authPassword }),
+      });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "No se pudo enviar el código.");
-      setCodeSent(true); setAuthMessage(data.message);
+      if (!response.ok) throw new Error(data.error ?? "No se pudo completar el acceso.");
+      if (authMode === "recover" || (authMode === "register" && !data.signedIn)) {
+        setAuthMessage(data.message);
+        if (authMode === "register") { setAuthMode("login"); setAuthPassword(""); setAuthConfirm(""); }
+      } else {
+        if (data.user) setUser(data.user);
+        setAuthOpen(false); setAuthPassword(""); setAuthConfirm(""); setAuthMode("login");
+        await refreshDashboard();
+      }
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : "No se pudo enviar el código.");
-    } finally { setAuthBusy(false); }
-  };
-
-  const verifyCode = async () => {
-    setAuthBusy(true); setAuthError("");
-    try {
-      const response = await fetch("/api/auth/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: authEmail, token: authCode }) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "El código no es válido.");
-      setUser(data.user); setAuthOpen(false); setCodeSent(false); setAuthCode(""); setAuthMessage("");
-      await refreshDashboard();
-    } catch (error) {
-      setAuthError(error instanceof Error ? error.message : "No se pudo verificar el código.");
+      setAuthError(error instanceof Error ? error.message : "No se pudo completar el acceso.");
     } finally { setAuthBusy(false); }
   };
 
@@ -327,6 +333,7 @@ export default function Home() {
           <p className="eyebrow">TU CUENTA</p><h1 id="account-heading">Perfil</h1>
           <div className="account-card"><UserAvatar photo={profilePhoto} initials={displayName.slice(0, 1).toUpperCase()} variant={avatar} className="profile-large"/><div><strong>{displayName}</strong><span>{user?.email ?? "Inicia sesión para consultar tu cuenta"}</span></div></div>
           <button className="secondary-action" onClick={() => setProfileOpen(true)}>Editar mi avatar</button>
+          {user && <button className="secondary-action" onClick={() => { setAuthMode("newPassword"); setAuthOpen(true); setAuthError(""); }}>Crear o cambiar contraseña</button>}
           <div className="account-card account-details"><div><strong>Membresía</strong><span>{!user ? "Inicia sesión para verla" : !dashboard ? "No disponible" : dashboard.membership ? ({trialing: "Periodo de prueba", active: "Activa", past_due: "Pago pendiente", canceled: "Cancelada", incomplete: "Incompleta", unpaid: "Sin pago", paused: "Pausada"} as Record<string, string>)[dashboard.membership.status] ?? dashboard.membership.status : "Sin registro de membresía"}</span>
           {dashboard?.membership?.status === "trialing" && <span>Prueba hasta el {new Date(dashboard.membership.trial_ends_at).toLocaleDateString("es-MX")}</span>}
           {dashboard?.membership?.current_period_ends_at && <span>Periodo hasta el {new Date(dashboard.membership.current_period_ends_at).toLocaleDateString("es-MX")}</span>}
@@ -359,10 +366,20 @@ export default function Home() {
         {practiceResult ? <><p className="practice-instructions">Tu resultado quedó guardado en tu cuenta.</p><div className="result-grid"><div><strong>{Math.round(practiceResult.rawActivePpm)}</strong><span>ppm en esta lectura</span></div><div><strong>{practiceResult.comprehensionScore}%</strong><span>comprensión en esta práctica</span></div><div><strong>{practiceResult.correctAnswers}/{practiceResult.totalQuestions}</strong><span>respuestas</span></div></div><button className="primary-cta practice-action" onClick={endPractice}>Volver al inicio <Icon name="arrow"/></button></> : !finished ? <><p className="practice-instructions">Lee el texto a tu ritmo. El cronómetro mide solo esta lectura; al terminar, se detiene mientras respondes. Para una medición válida, lee durante al menos 10 segundos.</p><div className="passage">{practice.article.body}</div><button className="primary-cta practice-action" disabled={seconds < 10} onClick={() => { setRunning(false); setFinished(true); }}>{seconds < 10 ? "Lee un poco más…" : "Ya terminé de leer"} <Icon name="arrow"/></button></> : <><p className="practice-instructions">Responde para guardar la práctica. Tus respuestas se califican de forma segura.</p><div className="question-stack">{practice.questions.map((question, qIndex) => <div className="question-block" key={question.id}><strong>{qIndex + 1}. {question.prompt}</strong><div className="answer-list">{question.options.map((option, index) => <button key={`${question.id}-${index}`} className={`answer-option ${answers[question.id] === index ? "chosen" : ""}`} onClick={() => setAnswers((current) => ({ ...current, [question.id]: index }))}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div></div>)}</div>{appError && <p className="inline-error" role="alert">{appError}</p>}<button className="primary-cta practice-action" disabled={savingPractice || practice.questions.some((question) => answers[question.id] === undefined)} onClick={submitPractice}>{savingPractice ? "Guardando…" : "Guardar mi resultado"} <Icon name="arrow"/></button></>}
       </section></div>}
 
-      {authOpen && <div className="sheet-backdrop" onClick={() => setAuthOpen(false)}><section className="profile-sheet auth-sheet" role="dialog" aria-modal="true" aria-labelledby="auth-title" onClick={(event) => event.stopPropagation()}>
-        <div className="sheet-handle"/><button className="sheet-close" onClick={() => setAuthOpen(false)} aria-label="Cerrar acceso"><Icon name="close"/></button><p className="eyebrow">TU PROGRESO, A TU RITMO</p><h2 id="auth-title">{codeSent ? "Revisa tu correo" : "Entra a Speedeep"}</h2>
-        {!codeSent ? <><p className="practice-instructions">Te enviaremos un enlace o código de un solo uso para guardar y consultar tus prácticas.</p><label className="form-label" htmlFor="auth-email">Correo electrónico</label><input id="auth-email" className="text-input" type="email" autoComplete="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="tu@correo.com"/><button className="primary-cta" disabled={authBusy || !authEmail} onClick={requestCode}>{authBusy ? "Enviando…" : "Enviar acceso"}</button></> : <><p className="practice-instructions">Abre el enlace del correo para entrar automáticamente. Si recibiste un código, escríbelo aquí. Correo: <strong>{authEmail}</strong>.</p><label className="form-label" htmlFor="auth-code">Código de acceso</label><input id="auth-code" className="text-input" inputMode="numeric" autoComplete="one-time-code" value={authCode} onChange={(event) => setAuthCode(event.target.value.replace(/\D/g, "").slice(0, 8))} placeholder="000000"/><button className="primary-cta" disabled={authBusy || authCode.length < 6} onClick={verifyCode}>{authBusy ? "Verificando…" : "Verificar y continuar"}</button><button className="text-action" onClick={() => { setCodeSent(false); setAuthCode(""); }}>Usar otro correo</button></>}
-        {authMessage && <p className="success-note">{authMessage}</p>}{authError && <p className="inline-error" role="alert">{authError}</p>}
+      {authOpen && <div className="sheet-backdrop" onClick={() => setAuthOpen(false)}><section className="profile-sheet auth-sheet" role="dialog" aria-modal="true" aria-labelledby="auth-title" onClick={event => event.stopPropagation()}>
+        <div className="sheet-handle"/><button className="sheet-close" onClick={() => setAuthOpen(false)} aria-label="Cerrar acceso"><Icon name="close"/></button>
+        <p className="eyebrow">TU PROGRESO, A TU RITMO</p>
+        <h2 id="auth-title">{authMode === "register" ? "Crea tu cuenta" : authMode === "recover" ? "Crea o recupera tu contraseña" : authMode === "newPassword" ? "Elige tu contraseña" : "Entra a Speedeep"}</h2>
+        <p className="practice-instructions">{authMode === "recover" ? "Te enviaremos un correo de verificación. Después podrás elegir una contraseña y entrar aquí." : authMode === "register" ? "Regístrate con correo y contraseña. Confirma tu correo si se te solicita." : authMode === "newPassword" ? "Escribe una contraseña nueva para seguir usando esta cuenta." : "Usa tu correo y contraseña para volver a tu ruta."}</p>
+        <form onSubmit={event => { event.preventDefault(); void submitAuth(); }}>
+          {authMode !== "newPassword" && <><label className="form-label" htmlFor="auth-email">Correo electrónico</label><input id="auth-email" className="text-input" type="email" autoComplete="email" required value={authEmail} onChange={event => setAuthEmail(event.target.value)} placeholder="tu@correo.com"/></>}
+          {authMode !== "recover" && <><label className="form-label" htmlFor="auth-password">Contraseña</label><input id="auth-password" className="text-input" type="password" autoComplete={authMode === "login" ? "current-password" : "new-password"} required minLength={authMode === "login" ? 1 : 10} maxLength={128} value={authPassword} onChange={event => setAuthPassword(event.target.value)} placeholder={authMode === "login" ? "Tu contraseña" : "Al menos 10 caracteres"}/></>}
+          {(authMode === "register" || authMode === "newPassword") && <><label className="form-label" htmlFor="auth-confirm">Confirma tu contraseña</label><input id="auth-confirm" className="text-input" type="password" autoComplete="new-password" required minLength={10} maxLength={128} value={authConfirm} onChange={event => setAuthConfirm(event.target.value)}/></>}
+          <button className="primary-cta" type="submit" disabled={authBusy || (authMode !== "newPassword" && !authEmail) || (authMode !== "recover" && !authPassword)}>{authBusy ? "Procesando…" : authMode === "register" ? "Crear cuenta" : authMode === "recover" ? "Enviar instrucciones" : authMode === "newPassword" ? "Guardar contraseña" : "Entrar"}</button>
+        </form>
+        {authMode === "login" && <><button className="text-action" onClick={() => { setAuthMode("recover"); setAuthError(""); setAuthMessage(""); }}>Crear o recuperar contraseña</button><button className="text-action" onClick={() => { setAuthMode("register"); setAuthError(""); setAuthMessage(""); }}>Soy nuevo: crear cuenta</button></>}
+        {authMode === "recover" || authMode === "register" ? <button className="text-action" onClick={() => { setAuthMode("login"); setAuthError(""); setAuthMessage(""); }}>Ya tengo contraseña</button> : null}
+        {authMessage && <p className="success-note" role="status">{authMessage}</p>}{authError && <p className="inline-error" role="alert">{authError}</p>}
       </section></div>}
     </main>
   );

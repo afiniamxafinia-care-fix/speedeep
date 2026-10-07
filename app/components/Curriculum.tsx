@@ -13,7 +13,7 @@ const currentLevel = {
 };
 
 type Props = {
-  onStart: (code: "1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1") => void;
+  onStart: (code: "1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1" | "2.2") => void;
   onDiagnostic: () => void;
   onFlash: () => void;
   diagnosticStatus?: "not_started" | "active" | "completed";
@@ -24,13 +24,14 @@ type Props = {
   sentenceActionState?: "not_started" | "completed" | "demonstrated";
   integration?: { attempted: boolean; passed: boolean; correct: number | null };
   paragraphFirstCompleted?: boolean;
+  paragraphSecondCompleted?: boolean;
   anchor?: { nextArticleId: string | null; baselinePpm: number | null; baselineComprehension: number | null; comparisonPpm: number | null; comparisonComprehension: number | null; deltaPpm: number | null };
   calibration?: { nextArticleId: string | null; count: number; latestPpm: number | null; latestComprehension: number | null };
   onReadAnchor: (articleId: string) => void;
   onExploreReading: () => void;
 };
 
-export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticStatus, diagnosticStep, activeStep, activeLessonCode, completedCount = 0, sentenceActionState, integration, paragraphFirstCompleted, anchor, calibration, onReadAnchor, onExploreReading }: Props) {
+export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticStatus, diagnosticStep, activeStep, activeLessonCode, completedCount = 0, sentenceActionState, integration, paragraphFirstCompleted, paragraphSecondCompleted, anchor, calibration, onReadAnchor, onExploreReading }: Props) {
   const practicedFirst = completedCount > 0;
   return <section className="section-page learning-route" aria-labelledby="route-heading">
     <p className="eyebrow">TU RUTA · {currentLevel.label.toUpperCase()}</p>
@@ -93,5 +94,6 @@ export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticS
     </div>
 
     <div className="route-next-level"><span>NIVEL 1.2 · LECCIÓN 1 DE 4</span><strong>Di de qué trata el párrafo</strong><small>{paragraphFirstCompleted ? "Completada · seguirás aplicando esta habilidad." : integration?.passed ? "Distingue la idea de un párrafo de su tema y sus detalles." : "Se abre al comprobar el nivel 1.1."}</small>{integration?.passed && <button className="mission-launch" onClick={() => onStart("2.1")}>{activeLessonCode === "2.1" ? "Seguir" : paragraphFirstCompleted ? "Practicar" : "Empezar"}</button>}</div>
+    <div className="route-next-level"><span>NIVEL 1.2 · LECCIÓN 2 DE 4</span><strong>Separa idea y apoyo</strong><small>{paragraphSecondCompleted ? "Completada · encontrarás apoyo en nuevos párrafos." : paragraphFirstCompleted ? "Identifica la razón, ejemplo o dato que sostiene una idea." : "Se abre al completar la lección 1."}</small>{paragraphFirstCompleted && <button className="mission-launch" onClick={() => onStart("2.2")}>{activeLessonCode === "2.2" ? "Seguir" : paragraphSecondCompleted ? "Practicar" : "Empezar"}</button>}</div>
   </section>;
 }

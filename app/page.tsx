@@ -10,7 +10,7 @@ import FlashNumbers from "@/app/components/FlashNumbers";
 type IconName = "home" | "route" | "arena" | "practice" | "profile" | "arrow" | "book" | "spark" | "heart" | "camera" | "close" | "target";
 type PracticeQuestion = { id: string; prompt: string; options: string[] };
 type PracticeData = { article: { id: string; slug: string; title: string; body: string; word_count: number; estimated_minutes: number }; questions: PracticeQuestion[] };
-type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; latestReadingPpm: number | null; speedEvidenceCount: number; comprehension: number | null; practicesCount: number; readingsCount: number; trainingCount: number; flashRounds: number; diagnosticCompleted: boolean; lessonsCompleted: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; activeLessonCode: string | null; completedCount: number; paragraphFirstCompleted: boolean; lastTransferCorrect: number | null; sentenceActionState: "not_started" | "completed" | "demonstrated"; sentenceChunkState: "not_started" | "completed"; integration: { attempted: boolean; passed: boolean; correct: number | null }; diagnosticStatus: "not_started" | "active" | "completed"; diagnosticStep: number | null }; lab: { numbersRank: number; numbersRounds: number } };
+type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; latestReadingPpm: number | null; speedEvidenceCount: number; comprehension: number | null; practicesCount: number; readingsCount: number; trainingCount: number; flashRounds: number; diagnosticCompleted: boolean; lessonsCompleted: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; activeLessonCode: string | null; completedCount: number; paragraphFirstCompleted: boolean; paragraphSecondCompleted: boolean; lastTransferCorrect: number | null; sentenceActionState: "not_started" | "completed" | "demonstrated"; sentenceChunkState: "not_started" | "completed"; integration: { attempted: boolean; passed: boolean; correct: number | null }; diagnosticStatus: "not_started" | "active" | "completed"; diagnosticStep: number | null }; lab: { numbersRank: number; numbersRounds: number } };
 type Anchor = { nextArticleId: string | null; baselinePpm: number | null; baselineComprehension: number | null; comparisonPpm: number | null; comparisonComprehension: number | null; deltaPpm: number | null };
 type Calibration = { nextArticleId: string | null; count: number; latestPpm: number | null; latestComprehension: number | null };
 type DashboardWithAnchor = Dashboard & { anchor: Anchor; calibration: Calibration };
@@ -64,7 +64,7 @@ export default function Home() {
   const displayName = dashboard?.user.name ?? user?.name ?? "Lector";
   const [activeTab, setActiveTab] = useState<Tab>("Home");
   const [profileOpen, setProfileOpen] = useState(false);
-  const [missionCode, setMissionCode] = useState<"1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1" | null>(null);
+  const [missionCode, setMissionCode] = useState<"1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1" | "2.2" | null>(null);
   const [diagnosticOpen, setDiagnosticOpen] = useState(false);
   const [flashOrigin, setFlashOrigin] = useState<"route" | "lab" | "diagnostic" | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string>();
@@ -84,10 +84,11 @@ export default function Home() {
   const [savingPractice, setSavingPractice] = useState(false);
   const [practiceResult, setPracticeResult] = useState<{ rawActivePpm: number; comprehensionScore: number; correctAnswers: number; totalQuestions: number; speedEligible: boolean } | null>(null);
 
-  const milestone = clubs.find(value => ppm === null || ppm < value) ?? "+1500";
+  const milestonePpm = visiblePpm;
+  const milestone = clubs.find(value => milestonePpm === null || milestonePpm < value) ?? "+1500";
   const previousMilestone = typeof milestone === "number" ? (clubs[clubs.indexOf(milestone) - 1] ?? 0) : 1500;
-  const milestoneProgress = ppm === null ? 0 : Math.min(100, Math.max(0, ((ppm - previousMilestone) / ((typeof milestone === "number" ? milestone : 1500) - previousMilestone || 1)) * 100));
-  const milestoneDistance = ppm === null ? milestone : typeof milestone === "number" ? Math.max(0, milestone - ppm) : 0;
+  const milestoneProgress = milestonePpm === null ? 0 : Math.min(100, Math.max(0, ((milestonePpm - previousMilestone) / ((typeof milestone === "number" ? milestone : 1500) - previousMilestone || 1)) * 100));
+  const milestoneDistance = milestonePpm === null ? milestone : typeof milestone === "number" ? Math.max(0, milestone - milestonePpm) : 0;
 
   useEffect(() => {
     const syncTab = () => {
@@ -360,10 +361,10 @@ export default function Home() {
           <div className="milestone-art" aria-hidden="true"><span className="orbit orbit-one"/><span className="orbit orbit-two"/><span className="milestone-spark">✦</span><Icon name="book"/></div>
           <div className="milestone-content">
             <p className="eyebrow">TU PRÓXIMO HITO</p>
-            <h2 id="milestone-title">{ppm === null ? <>Tu primer hito: <strong>300 ppm</strong></> : <>Vas acercándote a los <strong>{milestone} ppm</strong></>}</h2>
-            <p className="milestone-club">{ppm === null ? "Se necesita evidencia de varias lecturas comparables" : `Referencia hacia ${milestone} ppm · club aún sin certificar`}</p>
+            <h2 id="milestone-title">{milestonePpm === null ? <>Tu primer hito: <strong>300 ppm</strong></> : <>Vas acercándote a los <strong>{milestone} ppm</strong></>}</h2>
+            <p className="milestone-club">{milestonePpm === null ? "Haz una lectura para ver tu punto de partida" : ppm === null ? "Avance provisional · faltan lecturas comparables para certificar el club" : `Referencia hacia ${milestone} ppm · club aún sin certificar`}</p>
             <div className="progress-track" role="progressbar" aria-label={`Avance hacia ${milestone} ppm`} aria-valuenow={Math.round(milestoneProgress)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${milestoneProgress}%` }}/></div>
-            <div className="milestone-foot"><span>{ppm === null ? "El primer objetivo es 300 ppm con comprensión" : milestoneDistance ? `Diferencia: ${milestoneDistance} ppm` : "Sigue leyendo con comprensión"}</span><strong>{ppm === null ? "—" : `${Math.round(ppm)} / ${milestone} ppm`}</strong></div>
+            <div className="milestone-foot"><span>{milestonePpm === null ? "El primer objetivo es 300 ppm con comprensión" : milestoneDistance ? `Diferencia: ${Math.round(Number(milestoneDistance))} ppm` : "Sigue leyendo con comprensión"}</span><strong>{milestonePpm === null ? "—" : `${Math.round(milestonePpm)} / ${milestone} ppm`}</strong></div>
           </div>
           <div className="milestone-glow" aria-hidden="true"/>
         </section>
@@ -373,7 +374,7 @@ export default function Home() {
         </section>
         </>}
 
-        {activeTab === "Ruta" && <Curriculum diagnosticStatus={dashboard?.curriculum.diagnosticStatus} diagnosticStep={dashboard?.curriculum.diagnosticStep} onDiagnostic={() => { if (!user) setAuthOpen(true); else setDiagnosticOpen(true); }} onFlash={() => { if (!user) setAuthOpen(true); else setFlashOrigin("route"); }} activeStep={dashboard?.curriculum.activeStep} activeLessonCode={dashboard?.curriculum.activeLessonCode} completedCount={dashboard?.curriculum.completedCount} sentenceActionState={dashboard?.curriculum.sentenceActionState} integration={dashboard?.curriculum.integration} paragraphFirstCompleted={dashboard?.curriculum.paragraphFirstCompleted} anchor={dashboard?.anchor} calibration={dashboard?.calibration} onReadAnchor={id => { void startPractice(id,"route"); }} onExploreReading={() => openLibrary("reading")} onStart={code => { if (!user) setAuthOpen(true); else setMissionCode(code); }}/>} 
+        {activeTab === "Ruta" && <Curriculum diagnosticStatus={dashboard?.curriculum.diagnosticStatus} diagnosticStep={dashboard?.curriculum.diagnosticStep} onDiagnostic={() => { if (!user) setAuthOpen(true); else setDiagnosticOpen(true); }} onFlash={() => { if (!user) setAuthOpen(true); else setFlashOrigin("route"); }} activeStep={dashboard?.curriculum.activeStep} activeLessonCode={dashboard?.curriculum.activeLessonCode} completedCount={dashboard?.curriculum.completedCount} sentenceActionState={dashboard?.curriculum.sentenceActionState} integration={dashboard?.curriculum.integration} paragraphFirstCompleted={dashboard?.curriculum.paragraphFirstCompleted} paragraphSecondCompleted={dashboard?.curriculum.paragraphSecondCompleted} anchor={dashboard?.anchor} calibration={dashboard?.calibration} onReadAnchor={id => { void startPractice(id,"route"); }} onExploreReading={() => openLibrary("reading")} onStart={code => { if (!user) setAuthOpen(true); else setMissionCode(code); }}/>} 
 
         {activeTab === "Arena" && <section className="section-page" aria-labelledby="arena-heading">
           <p className="eyebrow">COMPETENCIA ENTRE LECTORES</p><h1 id="arena-heading">Arena</h1>

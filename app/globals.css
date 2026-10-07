@@ -171,3 +171,6 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid rgba(
 .practice-sheet .unsure-option{border-style:dashed;color:#52677b;background:#f7f9fc}
 .practice-sheet .unsure-option.chosen{border-style:solid;border-color:#8276e8;background:#f1efff;color:#493c93}
 .practice-sheet .unsure-option.chosen span{background:#8276e8;color:#fff}
+.level-tabs{display:flex;gap:7px;overflow-x:auto;margin:22px 0 12px;padding:8px;border:1px solid #e1e9f0;border-radius:18px;background:#f0f4f8;scrollbar-width:thin}
+.level-tab{flex:1 0 73px;min-height:60px;padding:8px 12px;border:0;border-radius:13px;background:transparent;color:#8291a3;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;text-align:left;cursor:pointer}
+.level-tab strong{font-size:14px;color:#536b82}.level-tab small{font-size:9px;font-weight:850;letter-spacing:.08em}.level-tab.current{background:#fff;box-shadow:0 5px 16px rgba(20,42,67,.08);color:#078e9c}.level-tab.current strong{color:#078e9c}.level-tab:disabled{cursor:default;opacity:.64}.level-tab:focus-visible{outline:3px solid #08b8c8;outline-offset:1px}

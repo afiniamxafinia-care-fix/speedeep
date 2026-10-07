@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 
 const currentLevel = {
   label: "Nivel 1.1",
@@ -13,7 +14,7 @@ const currentLevel = {
 };
 
 type Props = {
-  onStart: (code: "1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1" | "2.2" | "2.3") => void;
+  onStart: (code: "1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1" | "2.2" | "2.3" | "2.4") => void;
   onDiagnostic: () => void;
   onFlash: () => void;
   diagnosticStatus?: "not_started" | "active" | "completed";
@@ -26,18 +27,30 @@ type Props = {
   paragraphFirstCompleted?: boolean;
   paragraphSecondCompleted?: boolean;
   paragraphThirdCompleted?: boolean;
+  paragraphFourthCompleted?: boolean;
   anchor?: { nextArticleId: string | null; baselinePpm: number | null; baselineComprehension: number | null; comparisonPpm: number | null; comparisonComprehension: number | null; deltaPpm: number | null };
   calibration?: { nextArticleId: string | null; count: number; latestPpm: number | null; latestComprehension: number | null };
   onReadAnchor: (articleId: string) => void;
   onExploreReading: () => void;
 };
 
-export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticStatus, diagnosticStep, activeStep, activeLessonCode, completedCount = 0, sentenceActionState, integration, paragraphFirstCompleted, paragraphSecondCompleted, paragraphThirdCompleted, anchor, calibration, onReadAnchor, onExploreReading }: Props) {
+export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticStatus, diagnosticStep, activeStep, activeLessonCode, completedCount = 0, sentenceActionState, integration, paragraphFirstCompleted, paragraphSecondCompleted, paragraphThirdCompleted, paragraphFourthCompleted, anchor, calibration, onReadAnchor, onExploreReading }: Props) {
   const practicedFirst = completedCount > 0;
+  const [selectedLevel, setSelectedLevel] = useState<"1.1" | "1.2" | null>(null);
+  const currentTab = selectedLevel ?? (integration?.passed ? "1.2" : "1.1");
   return <section className="section-page learning-route" aria-labelledby="route-heading">
-    <p className="eyebrow">TU RUTA · {currentLevel.label.toUpperCase()}</p>
-    <h1 id="route-heading">{currentLevel.title}</h1>
-    <p>{currentLevel.mission}</p>
+    <p className="eyebrow">TU RUTA · NIVEL {currentTab}</p>
+    <h1 id="route-heading">{currentTab === "1.1" ? currentLevel.title : "Construir la idea del párrafo"}</h1>
+    <p>{currentTab === "1.1" ? currentLevel.mission : "Encuentra la idea, el apoyo y las conexiones entre las oraciones."}</p>
+
+    <nav className="level-tabs" aria-label="Niveles de la ruta">
+      {(["1.1", "1.2", "1.3", "1.4"] as const).map(level => {
+        const unlocked = level === "1.1" || level === "1.2" && Boolean(integration?.passed);
+        return <button key={level} type="button" className={currentTab === level ? "level-tab current" : "level-tab"} aria-current={currentTab === level ? "step" : undefined} disabled={!unlocked} onClick={() => setSelectedLevel(level as "1.1" | "1.2")}><strong>{level}</strong><small>{level === "1.1" ? integration?.passed ? "REPASAR" : "ACTUAL" : level === "1.2" ? currentTab === level ? "ACTUAL" : unlocked ? "ABRIR" : "PRÓXIMO" : "PRÓXIMO"}</small></button>;
+      })}
+    </nav>
+
+    {currentTab === "1.1" ? <>
 
     <div className="route-notice route-intro">
       <strong>{diagnosticStatus === "completed" ? "Tu punto de partida está listo" : "Empieza por descubrir tu punto de partida"}</strong>
@@ -94,8 +107,20 @@ export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticS
         : <small>Se abre al completar la lección 4.</small>}
     </div>
 
-    <div className="route-next-level"><span>NIVEL 1.2 · LECCIÓN 1 DE 4</span><strong>Di de qué trata el párrafo</strong><small>{paragraphFirstCompleted ? "Completada · seguirás aplicando esta habilidad." : integration?.passed ? "Distingue la idea de un párrafo de su tema y sus detalles." : "Se abre al comprobar el nivel 1.1."}</small>{integration?.passed && <button className="mission-launch" onClick={() => onStart("2.1")}>{activeLessonCode === "2.1" ? "Seguir" : paragraphFirstCompleted ? "Practicar" : "Empezar"}</button>}</div>
-    <div className="route-next-level"><span>NIVEL 1.2 · LECCIÓN 2 DE 4</span><strong>Separa idea y apoyo</strong><small>{paragraphSecondCompleted ? "Completada · encontrarás apoyo en nuevos párrafos." : paragraphFirstCompleted ? "Identifica la razón, ejemplo o dato que sostiene una idea." : "Se abre al completar la lección 1."}</small>{paragraphFirstCompleted && <button className="mission-launch" onClick={() => onStart("2.2")}>{activeLessonCode === "2.2" ? "Seguir" : paragraphSecondCompleted ? "Practicar" : "Empezar"}</button>}</div>
-    <div className="route-next-level"><span>NIVEL 1.2 · LECCIÓN 3 DE 4</span><strong>Conecta oraciones</strong><small>{paragraphThirdCompleted ? "Completada · seguirás los referentes en otros textos." : paragraphSecondCompleted ? "Descubre a quién o a qué se refiere cada frase." : "Se abre al completar la lección 2."}</small>{paragraphSecondCompleted && <button className="mission-launch" onClick={() => onStart("2.3")}>{activeLessonCode === "2.3" ? "Seguir" : paragraphThirdCompleted ? "Practicar" : "Empezar"}</button>}</div>
+    </> : <>
+      <div className="route-level-title"><div><span>MI RUTA · NIVEL 1.2</span><h2>Una habilidad a la vez.</h2></div><small>4 lecciones + comprobación</small></div>
+      <ol className="route-steps" aria-label="Lecciones del nivel 1.2">
+        {([
+          { code: "2.1", title: "Di de qué trata el párrafo", detail: "Distingue la idea completa del tema o un detalle.", completed: paragraphFirstCompleted, available: true },
+          { code: "2.2", title: "Separa idea y apoyo", detail: "Encuentra el dato que sostiene una idea.", completed: paragraphSecondCompleted, available: paragraphFirstCompleted },
+          { code: "2.3", title: "Conecta oraciones", detail: "Sigue a quién o a qué se refiere cada frase.", completed: paragraphThirdCompleted, available: paragraphSecondCompleted },
+          { code: "2.4", title: "Conserva la esencia", detail: "Resume un párrafo sin copiar detalles secundarios.", completed: paragraphFourthCompleted, available: paragraphThirdCompleted },
+        ] as const).map((lesson, index) => <li key={lesson.code} className={`route-step ${lesson.completed ? "route-step-completed" : lesson.available ? "route-step-current" : "route-step-locked"}`}>
+          <span className="route-step-marker" aria-hidden="true">{lesson.completed ? "✓" : lesson.available ? "○" : "🔒"}</span>
+          <div className="route-step-copy"><span>NIVEL 1.2 · LECCIÓN {index+1}</span><strong>{lesson.title}</strong><small>{activeLessonCode === lesson.code ? `En curso · paso ${activeStep} de 6` : lesson.completed ? "Completada · podrás practicarla de nuevo" : lesson.available ? lesson.detail : index === 3 ? "Próximamente" : `Completa la lección ${index}`}</small></div>
+          {lesson.available ? <button className={`route-step-action ${lesson.completed ? "route-step-action-optional" : ""}`} onClick={() => onStart(lesson.code)}>{activeLessonCode === lesson.code ? "Seguir" : lesson.completed ? "Practicar" : "Empezar"}<span aria-hidden="true">→</span></button> : <span className="route-step-status">Próximamente</span>}
+        </li>)}
+      </ol>
+    </>}
   </section>;
 }

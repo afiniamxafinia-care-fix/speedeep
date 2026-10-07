@@ -14,7 +14,8 @@ export async function POST(request: Request) {
       });
     } catch (error) {
       if (error instanceof ApiError && error.status === 429) throw error;
-      // Do not disclose whether this email has an account.
+      // Keep upstream failures generic without claiming the email was sent.
+      throw new ApiError("No se pudo enviar el correo de recuperación. Inténtalo de nuevo.", 503);
     }
     return Response.json({ message: "Si ese correo tiene una cuenta, recibirás instrucciones para crear una contraseña." });
   } catch (error) { return apiErrorResponse(error); }

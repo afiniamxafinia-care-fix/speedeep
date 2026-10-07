@@ -108,7 +108,9 @@ export default function Home() {
           window.history.replaceState({}, document.title, cleanUrl);
           if (!callback.ok) throw new Error(callbackData.error ?? "El enlace venció. Solicita otro código.");
           signedInUser = callbackData.user;
-          if (hash.get("type") === "recovery") { setAuthMode("newPassword"); setAuthOpen(true); }
+          if (hash.get("type") === "recovery" || new URLSearchParams(window.location.search).get("auth") === "recovery") {
+            setAuthMode("newPassword"); setAuthOpen(true);
+          }
         } else {
           const response = await fetch("/api/auth/session");
           const data = await response.json();

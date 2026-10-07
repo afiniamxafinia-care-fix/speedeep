@@ -39,18 +39,20 @@ export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticS
       <div><span>MI RUTA</span><h2>Una habilidad a la vez.</h2></div>
       <small>{currentLevel.lessons.length} lecciones</small>
     </div>
+    <p className="route-state-guide"><span><i className="route-state-dot route-state-dot-current"/> En curso</span><span><i className="route-state-dot route-state-dot-completed"/> Completada</span><span><i className="route-state-dot route-state-dot-locked"/> Próximamente</span></p>
 
     <ol className="route-steps" aria-label={`Lecciones de ${currentLevel.label}`}>
       {currentLevel.lessons.map((lesson, index) => {
         const available = index === 0;
-        const card = <li key={lesson.title} className={`route-step ${available ? "route-step-current" : "route-step-locked"}`}>
-          <span className="route-step-marker" aria-hidden="true">{available ? "○" : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>}</span>
+        const completed = available && practicedFirst && !activeStep;
+        const card = <li key={lesson.title} className={`route-step ${completed ? "route-step-completed" : available ? "route-step-current" : "route-step-locked"}`}>
+          <span className="route-step-marker" aria-hidden="true">{completed ? "✓" : available ? "○" : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>}</span>
           <div className="route-step-copy">
             <span>{currentLevel.label.toUpperCase()} · LECCIÓN {index + 1}</span>
             <strong>{lesson.title}</strong>
-            <small>{available ? activeStep ? `Retoma el paso ${activeStep} de 6` : practicedFirst ? "Practicada · continúa consolidando esta habilidad" : lesson.description : "Esta lección está en preparación"}</small>
+            <small>{available ? activeStep ? `En curso · paso ${activeStep} de 6` : completed ? "Completada · seguiremos observando esta habilidad en misiones nuevas" : lesson.description : "Esta lección está en preparación"}</small>
           </div>
-          {available ? <button className="route-step-action" aria-label={`${activeStep ? "Retomar" : practicedFirst ? "Volver a practicar" : "Abrir"} lección 1: ${lesson.title}`} onClick={onStart}>{activeStep ? "Seguir" : practicedFirst ? "Repetir" : "Empezar"}<span aria-hidden="true">→</span></button>
+          {available ? <button className={`route-step-action ${completed ? "route-step-action-optional" : ""}`} aria-label={`${activeStep ? "Retomar" : completed ? "Practicar de nuevo, opcional" : "Abrir"} lección 1: ${lesson.title}`} onClick={onStart}>{activeStep ? "Seguir" : completed ? "Practicar" : "Empezar"}<span aria-hidden="true">→</span></button>
             : <span className="route-step-status">Próximamente</span>}
         </li>;
         if (!available) return card;

@@ -4,11 +4,12 @@ import { ChangeEvent, useEffect, useState } from "react";
 import PracticeLibrary, { practiceModes, type PracticeKind } from "@/app/components/PracticeLibrary";
 import Curriculum from "@/app/components/Curriculum";
 import MissionOne from "@/app/components/MissionOne";
+import Diagnostic from "@/app/components/Diagnostic";
 
 type IconName = "home" | "route" | "arena" | "practice" | "profile" | "arrow" | "book" | "spark" | "heart" | "camera" | "close" | "target";
 type PracticeQuestion = { id: string; prompt: string; options: string[] };
 type PracticeData = { article: { id: string; title: string; body: string; word_count: number; estimated_minutes: number }; questions: PracticeQuestion[] };
-type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; comprehension: number | null; practicesCount: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; completedCount: number; lastTransferCorrect: number | null } };
+type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; comprehension: number | null; practicesCount: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; completedCount: number; lastTransferCorrect: number | null; diagnosticStatus: "not_started" | "active" | "completed"; diagnosticStep: number | null } };
 type Tab = "Home" | "Ruta" | "Arena" | "Prácticas" | "Perfil";
 const tabs: Tab[] = ["Home", "Ruta", "Arena", "Prácticas", "Perfil"];
 const clubs = [300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500];
@@ -58,6 +59,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("Home");
   const [profileOpen, setProfileOpen] = useState(false);
   const [missionOpen, setMissionOpen] = useState(false);
+  const [diagnosticOpen, setDiagnosticOpen] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<string>();
   const [avatar, setAvatar] = useState(profileAvatars[0]);
   const [practiceOpen, setPracticeOpen] = useState(false);
@@ -313,11 +315,11 @@ export default function Home() {
         </section>
 
         <section className="practice-nudge" aria-label="Continuar la ruta">
-          <span className="nudge-icon"><Icon name="route"/></span><div><strong>{dashboard?.curriculum.activeStep ? "Retoma tu misión 1.1" : "Tu próximo paso está en Ruta"}</strong><p>{dashboard?.curriculum.activeStep ? `Quedaste en el paso ${dashboard.curriculum.activeStep} de 6.` : "Aprende una habilidad y úsala en una lectura nueva."}</p></div><button onClick={() => navigate("Ruta")} aria-label="Abrir ruta"><Icon name="arrow"/></button>
+          <span className="nudge-icon"><Icon name="route"/></span><div><strong>{dashboard?.curriculum.diagnosticStatus !== "completed" ? "Descubre tu punto de partida" : dashboard?.curriculum.activeStep ? "Retoma tu misión 1.1" : "Tu próximo paso está en Ruta"}</strong><p>{dashboard?.curriculum.diagnosticStatus !== "completed" ? "Dos lecturas breves orientan tu plan." : dashboard?.curriculum.activeStep ? `Quedaste en el paso ${dashboard.curriculum.activeStep} de 6.` : "Aprende una habilidad y úsala en una lectura nueva."}</p></div><button onClick={() => navigate("Ruta")} aria-label="Abrir ruta"><Icon name="arrow"/></button>
         </section>
         </>}
 
-        {activeTab === "Ruta" && <Curriculum activeStep={dashboard?.curriculum.activeStep} completedCount={dashboard?.curriculum.completedCount} onStart={() => { if (!user) setAuthOpen(true); else setMissionOpen(true); }}/>}
+        {activeTab === "Ruta" && <Curriculum diagnosticStatus={dashboard?.curriculum.diagnosticStatus} diagnosticStep={dashboard?.curriculum.diagnosticStep} onDiagnostic={() => { if (!user) setAuthOpen(true); else setDiagnosticOpen(true); }} activeStep={dashboard?.curriculum.activeStep} completedCount={dashboard?.curriculum.completedCount} onStart={() => { if (!user) setAuthOpen(true); else setMissionOpen(true); }}/>} 
 
         {activeTab === "Arena" && <section className="section-page" aria-labelledby="arena-heading">
           <p className="eyebrow">COMPETENCIA ENTRE LECTORES</p><h1 id="arena-heading">Arena</h1>
@@ -350,7 +352,8 @@ export default function Home() {
       </nav>
 
       {libraryKind && <PracticeLibrary initialKind={libraryKind} onClose={() => setLibraryKind(null)} onRead={id => { setLibraryKind(null); void startPractice(id); }}/>} 
-      {missionOpen && <MissionOne onClose={() => { setMissionOpen(false); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }}/>}
+      {missionOpen && <MissionOne onClose={() => { setMissionOpen(false); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }}/>} 
+      {diagnosticOpen && <Diagnostic onClose={() => { setDiagnosticOpen(false); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }} onFinish={() => { void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }}/>} 
 
       {profileOpen && <div className="sheet-backdrop" onClick={() => setProfileOpen(false)}><section className="profile-sheet" role="dialog" aria-modal="true" aria-labelledby="profile-title" onClick={(event) => event.stopPropagation()}>
         <div className="sheet-handle"/><button className="sheet-close" onClick={() => setProfileOpen(false)} aria-label="Cerrar perfil"><Icon name="close"/></button>

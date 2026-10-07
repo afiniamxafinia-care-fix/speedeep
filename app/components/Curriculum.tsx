@@ -11,14 +11,14 @@ const blocks = [
   { title: "Transferir a la vida real", lessons: ["Entender instrucciones", "Decidir con información", "Evaluar una afirmación", "Misión elegida por el lector"] },
 ];
 
-export default function Curriculum({ onStart, activeStep, completedCount }: { onStart: () => void; activeStep?: number | null; completedCount?: number }) {
+export default function Curriculum({ onStart, onDiagnostic, diagnosticStatus, diagnosticStep, activeStep, completedCount }: { onStart: () => void; onDiagnostic: () => void; diagnosticStatus?: "not_started" | "active" | "completed"; diagnosticStep?: number | null; activeStep?: number | null; completedCount?: number }) {
   return <section className="section-page" aria-labelledby="route-heading">
     <p className="eyebrow">TU PLAN DE ESTUDIOS</p><h1 id="route-heading">Ruta de lectura</h1>
     <p>32 misiones en ocho bloques. Cada misión enseña una acción que aplicarás en textos nuevos.</p>
-    <div className="route-notice"><strong>Diagnóstico inicial pendiente</strong><span>La ubicación personalizada y el desbloqueo por dominio se activarán al integrar las evaluaciones de la ruta. Las lecturas de Prácticas no acreditan estas lecciones.</span></div>
+    <div className="route-notice"><strong>{diagnosticStatus === "completed" ? "Tu punto de partida quedó guardado" : "Descubre tu punto de partida"}</strong><span>{diagnosticStatus === "completed" ? "Empieza con la primera habilidad. El diagnóstico orienta tu enseñanza y no certifica dominio; podrás revisar tus resultados aquí." : "Lee dos textos nuevos a tu ritmo y responde preguntas de comprensión. Puedes interrumpir y retomar."}</span><button className="mission-launch diagnostic-launch" onClick={onDiagnostic}>{diagnosticStatus === "completed" ? "Ver resultado" : diagnosticStatus === "active" ? `Retomar pregunta ${diagnosticStep ?? 1}/10` : "Comenzar diagnóstico"}</button></div>
     <div className="block-list">{blocks.map((block, index) => <article className="block-card" key={block.title}>
       <div className="block-heading"><span>Bloque {index + 1}</span><strong>{block.title}</strong></div>
-      <ol>{block.lessons.map((lesson, lessonIndex) => <li key={lesson}><span>{index + 1}.{lessonIndex + 1}</span>{lesson}{index === 0 && lessonIndex === 0 ? <button className="mission-launch" onClick={onStart}>{activeStep ? `Retomar · ${activeStep}/6` : completedCount ? "Practicar otra variante" : "Abrir misión"}</button> : <small>Bloqueada</small>}</li>)}</ol>
+      <ol>{block.lessons.map((lesson, lessonIndex) => <li key={lesson}><span>{index + 1}.{lessonIndex + 1}</span>{lesson}{index === 0 && lessonIndex === 0 ? <button className="mission-launch" onClick={onStart}>{activeStep ? `Retomar · ${activeStep}/6` : completedCount ? "Practicar otra variante" : "Abrir misión"}</button> : <small title="Esta misión aún no está publicada">Próximamente</small>}</li>)}</ol>
     </article>)}</div>
   </section>;
 }

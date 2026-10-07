@@ -121,3 +121,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid rgba(
 .activity-items span{padding:8px 10px;border-radius:11px;background:#edf9fa;color:#345269;font-size:11px;white-space:nowrap}
 .activity-items strong{color:#078fa2;font-size:14px}
 .activity-summary>small{display:block;margin-top:12px;color:#77899b;font-size:10px;line-height:1.45}
+.diagnostic-reading-closed{margin:14px 0;padding:18px;border:1px solid #dcebf1;border-radius:16px;background:#f7fafb;text-align:center}
+.diagnostic-reading-closed p{margin:0 0 10px;color:#718095;font-size:12px}
+.diagnostic-reading-closed .secondary-action,.diagnostic-reading .secondary-action{margin-top:0}
+.diagnostic-reading .passage{margin-bottom:10px}

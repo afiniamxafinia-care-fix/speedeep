@@ -11,14 +11,14 @@ const blocks = [
   { title: "Transferir a la vida real", lessons: ["Entender instrucciones", "Decidir con información", "Evaluar una afirmación", "Misión elegida por el lector"] },
 ];
 
-export default function Curriculum() {
+export default function Curriculum({ onStart }: { onStart: () => void }) {
   return <section className="section-page" aria-labelledby="route-heading">
     <p className="eyebrow">TU PLAN DE ESTUDIOS</p><h1 id="route-heading">Ruta de lectura</h1>
     <p>32 misiones en ocho bloques. Cada misión enseña una acción que aplicarás en textos nuevos.</p>
     <div className="route-notice"><strong>Diagnóstico inicial pendiente</strong><span>La ubicación personalizada y el desbloqueo por dominio se activarán al integrar las evaluaciones de la ruta. Las lecturas de Prácticas no acreditan estas lecciones.</span></div>
     <div className="block-list">{blocks.map((block, index) => <article className="block-card" key={block.title}>
       <div className="block-heading"><span>Bloque {index + 1}</span><strong>{block.title}</strong></div>
-      <ol>{block.lessons.map((lesson, lessonIndex) => <li key={lesson}><span>{index + 1}.{lessonIndex + 1}</span>{lesson}<small>Próximamente</small></li>)}</ol>
+      <ol>{block.lessons.map((lesson, lessonIndex) => <li key={lesson}><span>{index + 1}.{lessonIndex + 1}</span>{lesson}{index === 0 && lessonIndex === 0 ? <button className="mission-launch" onClick={onStart}>Explorar misión</button> : <small>Bloqueada</small>}</li>)}</ol>
     </article>)}</div>
   </section>;
 }

@@ -3,6 +3,7 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import PracticeLibrary, { practiceModes, type PracticeKind } from "@/app/components/PracticeLibrary";
 import Curriculum from "@/app/components/Curriculum";
+import MissionOne from "@/app/components/MissionOne";
 
 type IconName = "home" | "route" | "arena" | "practice" | "profile" | "arrow" | "book" | "spark" | "heart" | "camera" | "close" | "target";
 type PracticeQuestion = { id: string; prompt: string; options: string[] };
@@ -55,6 +56,7 @@ export default function Home() {
   const displayName = dashboard?.user.name ?? user?.name ?? "Lector";
   const [activeTab, setActiveTab] = useState<Tab>("Home");
   const [profileOpen, setProfileOpen] = useState(false);
+  const [missionOpen, setMissionOpen] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<string>();
   const [avatar, setAvatar] = useState(profileAvatars[0]);
   const [practiceOpen, setPracticeOpen] = useState(false);
@@ -307,7 +309,7 @@ export default function Home() {
         </section>
         </>}
 
-        {activeTab === "Ruta" && <Curriculum/>}
+        {activeTab === "Ruta" && <Curriculum onStart={() => setMissionOpen(true)}/>}
 
         {activeTab === "Arena" && <section className="section-page" aria-labelledby="arena-heading">
           <p className="eyebrow">COMPETENCIA ENTRE LECTORES</p><h1 id="arena-heading">Arena</h1>
@@ -339,6 +341,7 @@ export default function Home() {
       </nav>
 
       {libraryKind && <PracticeLibrary initialKind={libraryKind} onClose={() => setLibraryKind(null)} onRead={id => { setLibraryKind(null); void startPractice(id); }}/>} 
+      {missionOpen && <MissionOne onClose={() => setMissionOpen(false)}/>}
 
       {profileOpen && <div className="sheet-backdrop" onClick={() => setProfileOpen(false)}><section className="profile-sheet" role="dialog" aria-modal="true" aria-labelledby="profile-title" onClick={(event) => event.stopPropagation()}>
         <div className="sheet-handle"/><button className="sheet-close" onClick={() => setProfileOpen(false)} aria-label="Cerrar perfil"><Icon name="close"/></button>

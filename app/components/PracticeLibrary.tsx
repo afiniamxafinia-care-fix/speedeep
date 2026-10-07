@@ -14,12 +14,13 @@ type Article = { id: string; title: string; category: string; word_count: number
 type TrainingCard = { id: string; title: string; kind: PracticeKind; estimated_minutes: number; lastScore: number | null };
 type Exercise = { id: string; title: string; kind: PracticeKind; instructions: string; context: string; items: string[] };
 type Result = { score: number; expectedIndices: number[]; explanation: string };
+type Placement = { readingRange: "beginner" | "intermediate"; recommendedKind: string; reason: string };
 
 export default function PracticeLibrary({ initialKind = "reading", onClose, onRead }: {
   initialKind?: PracticeKind; onClose: () => void; onRead: (id: string) => void;
 }) {
   const [kind, setKind] = useState(initialKind);
-  const [catalog, setCatalog] = useState<{ articles: Article[]; exercises: TrainingCard[] } | null>(null);
+  const [catalog, setCatalog] = useState<{ articles: Article[]; exercises: TrainingCard[]; placement: Placement | null } | null>(null);
   const [active, setActive] = useState<{ attemptId: string; exercise: Exercise } | null>(null);
   const [selected, setSelected] = useState<number[]>([]);
   const [result, setResult] = useState<Result | null>(null);
@@ -79,9 +80,13 @@ export default function PracticeLibrary({ initialKind = "reading", onClose, onRe
       <h2 id="library-title">{exercise?.title ?? "Tus prácticas"}</h2>
       {!exercise ? <>
         <p className="practice-instructions">Elige una lectura o un reto breve para entrenar una habilidad concreta.</p>
+        {catalog?.placement && <div className="diagnostic-placement"><strong>Tu punto de partida sugerido</strong>
+          <p>{catalog.placement.reason} Rango de lectura: {catalog.placement.readingRange === "intermediate" ? "intermedio" : "inicial"}.</p>
+          <small>Orientación provisional: tus prácticas ajustarán esta recomendación.</small>
+          {catalog.placement.recommendedKind !== kind && practiceModes.some(m => m.kind === catalog.placement?.recommendedKind) && <button className="mission-launch" onClick={() => setKind(catalog.placement!.recommendedKind as PracticeKind)}>Ver práctica sugerida</button>}</div>}
         <div className="mode-tabs" role="tablist" aria-label="Tipos de práctica">{practiceModes.map(m => <button key={m.kind} role="tab" aria-selected={kind === m.kind} className={kind === m.kind ? "selected" : ""} onClick={() => setKind(m.kind)}>{m.title}</button>)}</div>
         {!catalog && !error && <p className="practice-instructions" role="status">Cargando tus prácticas…</p>}
-        <div className="catalog-list">{kind === "reading" ? catalog?.articles.map(a => <button key={a.id} className="catalog-card" onClick={() => onRead(a.id)}><span className="catalog-mark">↗</span><span><strong>{a.title}</strong><small>{a.category} · {a.word_count} palabras · {a.estimated_minutes} min</small><small>{({ beginner: "Inicial", intermediate: "Intermedio", advanced: "Avanzado" } as Record<string, string>)[a.difficulty_level] ?? "Práctica breve"}</small></span><b aria-hidden="true">→</b></button>) : catalog?.exercises.filter(e => e.kind === kind).map(e => <button key={e.id} className="catalog-card" disabled={busy} onClick={() => begin(e.id)}><span className={`catalog-mark mark-${e.kind}`}>{mode.mark}</span><span><strong>{e.title}</strong><small>{mode.description} · {e.estimated_minutes} min</small>{e.lastScore !== null && <small className="saved-score">Último resultado: {e.lastScore}/100</small>}</span><b aria-hidden="true">→</b></button>)}</div>
+        <div className="catalog-list">{kind === "reading" ? catalog?.articles.slice().sort((a,b) => Number(b.difficulty_level === catalog.placement?.readingRange) - Number(a.difficulty_level === catalog.placement?.readingRange)).map(a => <button key={a.id} className="catalog-card" onClick={() => onRead(a.id)}><span className="catalog-mark">↗</span><span><strong>{a.title}</strong><small>{a.category} · {a.word_count} palabras · {a.estimated_minutes} min</small><small>{({ beginner: "Inicial", intermediate: "Intermedio", advanced: "Avanzado" } as Record<string, string>)[a.difficulty_level] ?? "Práctica breve"}{a.difficulty_level === catalog.placement?.readingRange ? " · sugerida" : ""}</small></span><b aria-hidden="true">→</b></button>) : catalog?.exercises.filter(e => e.kind === kind).map(e => <button key={e.id} className="catalog-card" disabled={busy} onClick={() => begin(e.id)}><span className={`catalog-mark mark-${e.kind}`}>{mode.mark}</span><span><strong>{e.title}</strong><small>{mode.description} · {e.estimated_minutes} min</small>{e.lastScore !== null && <small className="saved-score">Último resultado: {e.lastScore}/100</small>}</span><b aria-hidden="true">→</b></button>)}</div>
       </> : <>
         {!result && <>
           <p className="practice-instructions">{exercise.instructions}</p>

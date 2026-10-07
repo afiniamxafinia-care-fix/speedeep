@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-type Result = { skills: Record<string, { correct: number; total: number }>; recommendation: string; nextLesson: string };
+type Result = { skills: Record<string, { correct: number; total: number }>; recommendation: string; nextLesson: string;
+  confidenceState: "provisional"; calibrationPending: boolean;
+  practicePlacement: { readingRange: "beginner" | "intermediate"; recommendedKind: string; focusSkill: string; reason: string } };
 type DiagnosticState = {
   attemptId: string; status: "active" | "completed"; item?: number;
   passage?: { number: number; genre: string; title: string; body: string };
@@ -13,7 +15,7 @@ const labels: Record<string, string> = {
   cause: "Causa y efecto", inference: "Inferir con evidencia",
 };
 
-export default function Diagnostic({ onClose, onFinish }: { onClose: () => void; onFinish: () => void }) {
+export default function Diagnostic({ onClose, onFinish, onCalibrate }: { onClose: () => void; onFinish: () => void; onCalibrate: () => void }) {
   const [state, setState] = useState<DiagnosticState | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [confidence, setConfidence] = useState<"sure" | "unsure">("sure");
@@ -74,6 +76,10 @@ export default function Diagnostic({ onClose, onFinish }: { onClose: () => void;
         <div className="diagnostic-results">{Object.entries(state.result.skills).map(([skill, value]) =>
           <div key={skill}><span>{labels[skill] ?? skill}</span><strong>{value.correct} de {value.total}</strong></div>)}</div>
         <p className="answer-feedback">{state.result.recommendation}</p>
+        {state.result.practicePlacement && <div className="diagnostic-placement"><strong>Tu inicio sugerido en Prácticas</strong>
+          <p>{state.result.practicePlacement.reason} Lecturas de rango {state.result.practicePlacement.readingRange === "intermediate" ? "intermedio" : "inicial"}. Ajustaremos la recomendación con tus próximas lecturas.</p>
+          <small>Orientación provisional · aún no hay QSD ni PPM certificada.</small></div>}
+        {state.result.calibrationPending && <button className="secondary-action diagnostic-calibrate" onClick={onCalibrate}>Calibrar Cifras fugaces · 8 destellos</button>}
         <button className="primary-cta practice-action" onClick={onClose}>Ver mi ruta</button>
       </>}
       {error && <p className="inline-error" role="alert">{error}</p>}

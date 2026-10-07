@@ -4,7 +4,7 @@ export async function POST(request: Request) {
   try {
     const token = await requireAccessToken();
     const body = await request.json();
-    if (body?.action === "begin" && (body.origin === "route" || body.origin === "lab")) {
+    if (body?.action === "begin" && (body.origin === "route" || body.origin === "lab" || body.origin === "diagnostic")) {
       return Response.json(await supabaseFetch("/rest/v1/rpc/begin_flash_numbers", token, {
         method: "POST", body: JSON.stringify({ p_origin: body.origin }),
       }));

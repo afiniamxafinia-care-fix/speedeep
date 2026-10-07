@@ -61,7 +61,7 @@ export default function Home() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [missionOpen, setMissionOpen] = useState(false);
   const [diagnosticOpen, setDiagnosticOpen] = useState(false);
-  const [flashOrigin, setFlashOrigin] = useState<"route" | "lab" | null>(null);
+  const [flashOrigin, setFlashOrigin] = useState<"route" | "lab" | "diagnostic" | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string>();
   const [avatar, setAvatar] = useState(profileAvatars[0]);
   const [practiceOpen, setPracticeOpen] = useState(false);
@@ -356,7 +356,7 @@ export default function Home() {
 
       {libraryKind && <PracticeLibrary initialKind={libraryKind} onClose={() => setLibraryKind(null)} onRead={id => { setLibraryKind(null); void startPractice(id); }}/>} 
       {missionOpen && <MissionOne onClose={() => { setMissionOpen(false); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }}/>} 
-      {diagnosticOpen && <Diagnostic onClose={() => { setDiagnosticOpen(false); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }} onFinish={() => { void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }}/>} 
+      {diagnosticOpen && <Diagnostic onClose={() => { setDiagnosticOpen(false); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }} onFinish={() => { void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }} onCalibrate={() => { setDiagnosticOpen(false); setFlashOrigin("diagnostic"); }}/>} 
       {flashOrigin && <FlashNumbers origin={flashOrigin} onClose={() => { setFlashOrigin(null); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }}/>} 
 
       {profileOpen && <div className="sheet-backdrop" onClick={() => setProfileOpen(false)}><section className="profile-sheet" role="dialog" aria-modal="true" aria-labelledby="profile-title" onClick={(event) => event.stopPropagation()}>

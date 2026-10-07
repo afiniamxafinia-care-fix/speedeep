@@ -50,7 +50,7 @@ export default function Diagnostic({ onClose, onFinish, onCalibrate }: { onClose
   }
 
   async function continueDiagnostic() {
-    if (!state || selected === null || busy) return;
+    if (!state || selected === null || busy || revealing || passageVisible) return;
     setBusy(true); setError("");
     try {
       const response = await fetch("/api/diagnostic", {
@@ -84,7 +84,7 @@ export default function Diagnostic({ onClose, onFinish, onCalibrate }: { onClose
           <label><input type="radio" name="confidence" checked={confidence === "sure"} onChange={() => setConfidence("sure")}/> Seguro</label>
           <label><input type="radio" name="confidence" checked={confidence === "unsure"} onChange={() => setConfidence("unsure")}/> Tengo dudas</label>
         </fieldset>
-        <button className="primary-cta practice-action" type="button" disabled={selected === null || busy} onClick={() => void continueDiagnostic()}>{busy ? "Guardando…" : "Guardar y continuar"}</button></>}
+        <button className="primary-cta practice-action" type="button" disabled={selected === null || busy || revealing} onClick={() => void continueDiagnostic()}>{busy ? "Guardando…" : "Guardar y continuar"}</button></>}
       </>}
       {state?.status === "completed" && state.result && <>
         <p className="practice-instructions">Estas diez respuestas son una orientación inicial, no una calificación ni una certificación de velocidad.</p>

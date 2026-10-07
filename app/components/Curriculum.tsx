@@ -14,7 +14,7 @@ const currentLevel = {
 };
 
 type Props = {
-  onStart: (code: "1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1" | "2.2" | "2.3" | "2.4") => void;
+  onStart: (code: "1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1" | "2.2" | "2.3" | "2.4" | "2.C") => void;
   onDiagnostic: () => void;
   onFlash: () => void;
   diagnosticStatus?: "not_started" | "active" | "completed";
@@ -28,25 +28,26 @@ type Props = {
   paragraphSecondCompleted?: boolean;
   paragraphThirdCompleted?: boolean;
   paragraphFourthCompleted?: boolean;
+  paragraphIntegration?: { attempted: boolean; passed: boolean; correct: number | null; missing: string[] };
   anchor?: { nextArticleId: string | null; baselinePpm: number | null; baselineComprehension: number | null; comparisonPpm: number | null; comparisonComprehension: number | null; deltaPpm: number | null };
   calibration?: { nextArticleId: string | null; count: number; latestPpm: number | null; latestComprehension: number | null };
   onReadAnchor: (articleId: string) => void;
   onExploreReading: () => void;
 };
 
-export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticStatus, diagnosticStep, activeStep, activeLessonCode, completedCount = 0, sentenceActionState, integration, paragraphFirstCompleted, paragraphSecondCompleted, paragraphThirdCompleted, paragraphFourthCompleted, anchor, calibration, onReadAnchor, onExploreReading }: Props) {
+export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticStatus, diagnosticStep, activeStep, activeLessonCode, completedCount = 0, sentenceActionState, integration, paragraphFirstCompleted, paragraphSecondCompleted, paragraphThirdCompleted, paragraphFourthCompleted, paragraphIntegration, anchor, calibration, onReadAnchor, onExploreReading }: Props) {
   const practicedFirst = completedCount > 0;
-  const [selectedLevel, setSelectedLevel] = useState<"1.1" | "1.2" | null>(null);
+  const [selectedLevel, setSelectedLevel] = useState<"1.1" | "1.2" | "1.3" | null>(null);
   const currentTab = selectedLevel ?? (integration?.passed ? "1.2" : "1.1");
   return <section className="section-page learning-route" aria-labelledby="route-heading">
     <p className="eyebrow">TU RUTA · NIVEL {currentTab}</p>
-    <h1 id="route-heading">{currentTab === "1.1" ? currentLevel.title : "Construir la idea del párrafo"}</h1>
-    <p>{currentTab === "1.1" ? currentLevel.mission : "Encuentra la idea, el apoyo y las conexiones entre las oraciones."}</p>
+    <h1 id="route-heading">{currentTab === "1.1" ? currentLevel.title : currentTab === "1.2" ? "Construir la idea del párrafo" : "Relacionar partes de un texto"}</h1>
+    <p>{currentTab === "1.1" ? currentLevel.mission : currentTab === "1.2" ? "Encuentra la idea, el apoyo y las conexiones entre las oraciones." : "Tu siguiente nivel se abre al comprender párrafos nuevos. Mientras llegan sus lecciones, mide tu lectura con textos comparables."}</p>
 
     <nav className="level-tabs" aria-label="Niveles de la ruta">
       {(["1.1", "1.2", "1.3", "1.4"] as const).map(level => {
-        const unlocked = level === "1.1" || level === "1.2" && Boolean(integration?.passed);
-        return <button key={level} type="button" className={currentTab === level ? "level-tab current" : "level-tab"} aria-current={currentTab === level ? "step" : undefined} disabled={!unlocked} onClick={() => setSelectedLevel(level as "1.1" | "1.2")}><strong>{level}</strong><small>{level === "1.1" ? integration?.passed ? "REPASAR" : "ACTUAL" : level === "1.2" ? currentTab === level ? "ACTUAL" : unlocked ? "ABRIR" : "PRÓXIMO" : "PRÓXIMO"}</small></button>;
+        const unlocked = level === "1.1" || level === "1.2" && Boolean(integration?.passed) || level === "1.3" && Boolean(paragraphIntegration?.passed);
+        return <button key={level} type="button" className={currentTab === level ? "level-tab current" : "level-tab"} aria-current={currentTab === level ? "step" : undefined} disabled={!unlocked} onClick={() => setSelectedLevel(level as "1.1" | "1.2" | "1.3")}><strong>{level}</strong><small>{currentTab === level ? "ACTUAL" : unlocked ? "ABRIR" : "PRÓXIMO"}</small></button>;
       })}
     </nav>
 
@@ -107,7 +108,7 @@ export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticS
         : <small>Se abre al completar la lección 4.</small>}
     </div>
 
-    </> : <>
+    </> : currentTab === "1.2" ? <>
       <div className="route-level-title"><div><span>MI RUTA · NIVEL 1.2</span><h2>Una habilidad a la vez.</h2></div><small>4 lecciones + comprobación</small></div>
       <ol className="route-steps" aria-label="Lecciones del nivel 1.2">
         {([
@@ -121,6 +122,13 @@ export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticS
           {lesson.available ? <button className={`route-step-action ${lesson.completed ? "route-step-action-optional" : ""}`} onClick={() => onStart(lesson.code)}>{activeLessonCode === lesson.code ? "Seguir" : lesson.completed ? "Practicar" : "Empezar"}<span aria-hidden="true">→</span></button> : <span className="route-step-status">Próximamente</span>}
         </li>)}
       </ol>
-    </>}
+      <div className={`route-closure ${paragraphIntegration?.passed ? "route-closure-passed" : ""}`}>
+        <span className="eyebrow">NIVEL 1.2 · COMPROBACIÓN</span>
+        <strong>Comprende párrafos nuevos</strong>
+        <p>{paragraphIntegration?.passed ? `Comprobado: ${paragraphIntegration.correct}/6 al primer intento, con idea, apoyo, referentes y resumen.` : paragraphIntegration?.attempted ? `Ronda realizada: ${paragraphIntegration.correct}/6 al primer intento. ${paragraphIntegration.missing.length ? `Practica ${paragraphIntegration.missing.map(skill => ({ paragraph_main_idea: "idea principal", paragraph_support: "apoyo", paragraph_reference: "referentes", paragraph_summary: "resumen" })[skill as "paragraph_main_idea" | "paragraph_support" | "paragraph_reference" | "paragraph_summary"] ?? skill).join(", ")} y prueba otra variante.` : "Practica una ronda de seis párrafos inéditos para demostrar idea principal, apoyo, referentes y resumen."}` : "Seis párrafos inéditos para comprobar idea principal, apoyo, referentes y resumen."}</p>
+        {paragraphFourthCompleted ? <button className="mission-launch" onClick={() => onStart("2.C")}>{activeLessonCode === "2.C" ? `Seguir · paso ${activeStep} de 6` : paragraphIntegration?.passed ? "Practicar otra variante" : paragraphIntegration?.attempted ? "Probar otra variante" : "Comenzar comprobación"}</button> : <small>Se abre al completar la lección 4.</small>}
+      </div>
+      {paragraphIntegration?.passed && <div className="route-anchor"><span className="eyebrow">SIGUIENTE · NIVEL 1.3</span><strong>Tu siguiente nivel está abierto</strong><p>Antes de empezar nuevas habilidades, haz una lectura comparable para ver tu velocidad y comprensión en un texto completo.</p><button className="mission-launch" onClick={() => setSelectedLevel("1.3")}>Ver nivel 1.3</button></div>}
+    </> : <div className="route-anchor"><span className="eyebrow">NIVEL 1.3 · SIGUIENTE ETAPA</span><strong>Relacionar partes de un texto</strong><p>Las lecciones de este nivel están en preparación. Puedes tomar una lectura nueva y comparar tu velocidad y comprensión con la misma serie de textos.</p>{calibration?.nextArticleId ? <button className="mission-launch" onClick={() => onReadAnchor(calibration.nextArticleId!)}>Leer texto comparable {Math.min(3, (calibration.count ?? 0) + 1)} de 3</button> : calibration?.count !== undefined && calibration.count >= 3 ? <span className="route-calibration-done">✓ Ya tienes tres lecturas comparables. Consulta tu velocidad de referencia en Home.</span> : <button className="mission-launch" onClick={onExploreReading}>Elegir lectura</button>}</div>}
   </section>;
 }

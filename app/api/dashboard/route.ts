@@ -8,7 +8,7 @@ export async function GET() {
       supabaseFetch(`/rest/v1/profiles?select=display_name,avatar_url&id=eq.${encodeURIComponent(authUser.id)}`, token),
       supabaseFetch("/rest/v1/practice_sessions?select=id,article_id,article_content_version,completed_at,raw_active_ppm,adjusted_ppm,comprehension_score,validity_status,speed_eligible,timing_protocol_version,reading_articles(assessment_use,word_count,slug,difficulty_level,text_type)&order=completed_at.desc&limit=1000", token),
       supabaseFetch(`/rest/v1/subscriptions?select=status,trial_ends_at,current_period_ends_at,cancel_at_period_end&user_id=eq.${encodeURIComponent(authUser.id)}`, token),
-      supabaseFetch("/rest/v1/curriculum_attempts?select=id,lesson_code,status,current_step,variant,transfer_correct,started_at,completed_at&lesson_code=in.(1.1,1.2,1.3,1.4,1.C,2.1,2.2,2.3,2.4)&order=started_at.desc&limit=100", token),
+      supabaseFetch("/rest/v1/curriculum_attempts?select=id,lesson_code,status,current_step,variant,transfer_correct,started_at,completed_at&lesson_code=in.(1.1,1.2,1.3,1.4,1.C,2.1,2.2,2.3,2.4,2.C)&order=started_at.desc&limit=100", token),
       supabaseFetch("/rest/v1/curriculum_responses?select=attempt_id,first_correct,skill_code&order=answered_at.desc&limit=1000", token),
       supabaseFetch("/rest/v1/diagnostic_attempts?select=next_item,finished_at,started_at&order=started_at.desc&limit=1", token),
       supabaseFetch("/rest/v1/flash_profiles?select=numbers_rank,rounds_completed&limit=1", token),
@@ -58,7 +58,7 @@ export async function GET() {
     const successful = (lessonAttempts as LessonAttempt[] ?? []).filter(item => item.lesson_code === "1.1" && item.status === "completed" && item.transfer_correct === 2 && item.completed_at);
     const demonstrated = successful.some(later => later.variant === "C" && successful.some(earlier => earlier.variant !== "C"
       && earlier.completed_at && later.completed_at && new Date(later.completed_at).getTime() - new Date(earlier.completed_at).getTime() >= 24 * 60 * 60 * 1000));
-    const completedLessons = new Set((lessonAttempts as LessonAttempt[] ?? []).filter(item => item.status === "completed" && item.lesson_code !== "1.C").map(item => item.lesson_code));
+    const completedLessons = new Set((lessonAttempts as LessonAttempt[] ?? []).filter(item => item.status === "completed" && !item.lesson_code.endsWith(".C")).map(item => item.lesson_code));
     const activeLesson = (lessonAttempts ?? []).find((item: { status: string }) => item.status === "active");
     const closureAttempts = (lessonAttempts as LessonAttempt[] ?? []).filter(item => item.lesson_code === "1.C" && item.status === "completed");
     const requiredClosureSkills = ["sentence_action", "sentence_chunk", "sentence_connector", "vocabulary_context", "vocabulary_decision"];
@@ -67,6 +67,14 @@ export async function GET() {
       const correct = responses.filter(item => item.first_correct);
       return { correct: correct.length, passed: responses.length === 6 && correct.length >= 5
         && requiredClosureSkills.every(skill => correct.some(item => item.skill_code === skill)) };
+    });
+    const paragraphSkills = ["paragraph_main_idea", "paragraph_support", "paragraph_reference", "paragraph_summary"];
+    const paragraphAttempts = (lessonAttempts as LessonAttempt[] ?? []).filter(item => item.lesson_code === "2.C" && item.status === "completed");
+    const paragraphScores = paragraphAttempts.map(attempt => {
+      const responses = (lessonResponses as { attempt_id: string; first_correct: boolean; skill_code: string }[] ?? []).filter(item => item.attempt_id === attempt.id);
+      const correct = responses.filter(item => item.first_correct);
+      const missing = paragraphSkills.filter(skill => !correct.some(item => item.skill_code === skill));
+      return { correct: correct.length, passed: responses.length === 6 && correct.length >= 5 && missing.length === 0, missing };
     });
     return Response.json({
       user: { name: profile?.[0]?.display_name ?? authUser.user_metadata?.name ?? "Lector", avatarUrl: profile?.[0]?.avatar_url ?? null },
@@ -85,6 +93,7 @@ export async function GET() {
         sentenceActionState: demonstrated ? "demonstrated" : completedLessons.has("1.1") ? "completed" : "not_started",
         sentenceChunkState: completedLessons.has("1.2") ? "completed" : "not_started",
         integration: { attempted: closureScores.length > 0, passed: closureScores.some(score => score.passed), correct: (closureScores.find(score => score.passed) ?? closureScores[0])?.correct ?? null },
+        paragraphIntegration: { attempted: paragraphScores.length > 0, passed: paragraphScores.some(score => score.passed), correct: (paragraphScores.find(score => score.passed) ?? paragraphScores[0])?.correct ?? null, missing: paragraphScores[0]?.missing ?? [] },
       },
       lab: {
         numbersRank: flashProfiles?.[0]?.numbers_rank ?? 0,

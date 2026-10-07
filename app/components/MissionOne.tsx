@@ -6,7 +6,7 @@ type Case = { step: number; role: "probe" | "guided" | "transfer"; sentence: str
 type State = { attemptId: string; status: "active" | "completed"; variant: string; case?: Case; retryPending?: boolean; priorFeedback?: string | null; transferCorrect?: number; integrationPassed?: boolean | null };
 type Feedback = { feedback: string; correct: boolean; retryNeeded: boolean; completed: boolean; transferCorrect: number | null; integrationPassed?: boolean | null };
 
-export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1" | "2.2" | "2.3" | "2.4"; onClose: () => void }) {
+export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1" | "2.2" | "2.3" | "2.4" | "2.C"; onClose: () => void }) {
   const [state, setState] = useState<State | null>(null);
   const [chosen, setChosen] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
@@ -60,7 +60,8 @@ export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" 
   }
 
   const current = state?.case;
-  const instruction = lessonCode === "2.4" ? current?.role === "transfer" ? "Resume sin pistas." : "Conserva la idea y elimina detalles secundarios."
+  const instruction = lessonCode === "2.C" ? "Resuelve con lo que sabes, sin pistas."
+    : lessonCode === "2.4" ? current?.role === "transfer" ? "Resume sin pistas." : "Conserva la idea y elimina detalles secundarios."
     : lessonCode === "2.3" ? current?.step === 1 ? "Recuerda qué hecho sostiene el resultado." : current?.role === "transfer" ? "Sigue la referencia sin pistas." : "Busca a quién o a qué señala esa palabra."
     : lessonCode === "2.2" ? current?.step === 1 ? "Recuerda la idea completa." : current?.role === "transfer" ? "Encuentra el dato que sostiene la idea." : "Busca la prueba concreta, no un detalle suelto."
     : lessonCode === "2.1" ? current?.step === 1 ? "Recuerda qué ocurrió en el párrafo." : current?.role === "transfer" ? "Elige la idea completa sin pistas." : "Distingue la idea de un tema o un detalle."
@@ -74,15 +75,15 @@ export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" 
   return <div className="sheet-backdrop library-backdrop" onClick={onClose}><section className="profile-sheet library-sheet mission-sheet" role="dialog" aria-modal="true" aria-labelledby="mission-title" onClick={event => event.stopPropagation()}>
     <header className="mission-header">
       <button className="sheet-close" onClick={onClose} aria-label="Cerrar misión">×</button>
-      <p className="eyebrow">{lessonCode.startsWith("2.") ? `NIVEL 1.2 · LECCIÓN ${lessonCode.split(".")[1]}` : `NIVEL 1.1 · ${lessonCode === "1.C" ? "COMPROBACIÓN" : `LECCIÓN ${lessonCode.split(".")[1]}`}`}</p>
-      <h2 id="mission-title">{lessonCode === "1.1" ? "Conserva la acción central" : lessonCode === "1.2" ? "Une palabras que van juntas" : lessonCode === "1.3" ? "Sigue el giro de los conectores" : lessonCode === "1.4" ? "Resuelve vocabulario sin perder el hilo" : lessonCode === "2.1" ? "Di de qué trata el párrafo" : lessonCode === "2.2" ? "Separa idea y apoyo" : lessonCode === "2.3" ? "Conecta oraciones" : lessonCode === "2.4" ? "Conserva la esencia" : "Comprende oraciones nuevas"}</h2>
+      <p className="eyebrow">{lessonCode.startsWith("2.") ? `NIVEL 1.2 · ${lessonCode === "2.C" ? "COMPROBACIÓN" : `LECCIÓN ${lessonCode.split(".")[1]}`}` : `NIVEL 1.1 · ${lessonCode === "1.C" ? "COMPROBACIÓN" : `LECCIÓN ${lessonCode.split(".")[1]}`}`}</p>
+      <h2 id="mission-title">{lessonCode === "1.1" ? "Conserva la acción central" : lessonCode === "1.2" ? "Une palabras que van juntas" : lessonCode === "1.3" ? "Sigue el giro de los conectores" : lessonCode === "1.4" ? "Resuelve vocabulario sin perder el hilo" : lessonCode === "2.1" ? "Di de qué trata el párrafo" : lessonCode === "2.2" ? "Separa idea y apoyo" : lessonCode === "2.3" ? "Conecta oraciones" : lessonCode === "2.4" ? "Conserva la esencia" : lessonCode === "2.C" ? "Comprende párrafos nuevos" : "Comprende oraciones nuevas"}</h2>
       {current && state?.status !== "completed" && <div className="mission-progress">{current.role === "probe" ? "Explora" : current.role === "guided" ? "Practica" : "Aplica"} · {current.step} de 6</div>}
     </header>
     <div className="mission-body">
       {!state && !error && <p className="practice-instructions" role="status">Preparando la lección…</p>}
       {state?.status === "completed" ? <div className="mission-complete">
-        <strong>{lessonCode === "1.C" ? "Ronda terminada" : "Lección completada"}</strong>
-        {lessonCode === "1.C" ? <><p>{state.transferCorrect} de 6 respuestas correctas al primer intento.</p><p>{state.integrationPassed ? "Comprobaste las habilidades de este bloque con oraciones nuevas." : "En Ruta puedes practicar y resolver otra ronda con oraciones nuevas."}</p></> : <><p>{state.transferCorrect} de 2 respuestas correctas al primer intento en oraciones nuevas.</p><p>{state.transferCorrect === 2 ? "Volverás a usar esta habilidad más adelante." : "Seguirás practicando esta habilidad con oraciones nuevas."}</p></>}
+        <strong>{lessonCode.endsWith(".C") ? "Ronda terminada" : "Lección completada"}</strong>
+        {lessonCode.endsWith(".C") ? <><p>{state.transferCorrect} de 6 respuestas correctas al primer intento.</p><p>{state.integrationPassed ? "Comprobaste las habilidades de este nivel con material nuevo." : "En Ruta verás qué reforzar y podrás probar otra variante."}</p></> : <><p>{state.transferCorrect} de 2 respuestas correctas al primer intento en material nuevo.</p><p>{state.transferCorrect === 2 ? "Volverás a usar esta habilidad más adelante." : "Seguirás practicando esta habilidad con material nuevo."}</p></>}
         <button className="primary-cta" onClick={onClose}>Volver a la ruta</button>
       </div> : current && <>
         <p className="mission-instruction">{instruction}</p>

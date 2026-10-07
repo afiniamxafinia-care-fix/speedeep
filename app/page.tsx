@@ -1,180 +1,366 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
+import PracticeLibrary, { practiceModes, type PracticeKind } from "@/app/components/PracticeLibrary";
+import Curriculum from "@/app/components/Curriculum";
 
-const peers = [
-  { name: "Valeria", level: "Racha de 6 días", ppm: 286, color: "lilac", initials: "V" },
-  { name: "Mateo", level: "A 14 ppm del club", ppm: 286, color: "mint", initials: "M" },
-  { name: "Sofía", level: "Nueva marca personal", ppm: 342, color: "peach", initials: "S" },
-];
+type IconName = "home" | "route" | "arena" | "practice" | "profile" | "arrow" | "book" | "spark" | "heart" | "camera" | "close" | "target";
+type PracticeQuestion = { id: string; prompt: string; options: string[] };
+type PracticeData = { article: { id: string; title: string; body: string; word_count: number; estimated_minutes: number }; questions: PracticeQuestion[] };
+type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; comprehension: number | null; practicesCount: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null };
+type Tab = "Home" | "Ruta" | "Arena" | "Prácticas" | "Perfil";
+const tabs: Tab[] = ["Home", "Ruta", "Arena", "Prácticas", "Perfil"];
+const clubs = [300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500];
 
-const passage = "La lectura rápida no consiste en correr sobre las palabras. Consiste en entrenar la atención, reconocer ideas con intención y comprobar que lo leído permanece contigo. Con práctica breve y constante, tu cerebro aprende a encontrar patrones, conectar conceptos y dedicar menos tiempo a releer. La meta no es terminar primero: es avanzar más, comprendiendo mejor.";
+const profileAvatars = ["avatar-aqua", "avatar-violet", "avatar-coral", "avatar-lime"];
 
-function Icon({ name }: { name: "home" | "book" | "users" | "trophy" | "gift" | "menu" | "arrow" | "spark" }) {
-  const paths: Record<string, React.ReactNode> = {
+function Icon({ name }: { name: IconName }) {
+  const paths: Record<IconName, React.ReactNode> = {
     home: <><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-7h6v7"/></>,
-    book: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22z"/><path d="M4 5v14M8 7h8M8 11h7"/></>,
-    users: <><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1zM16 5a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 5v1"/></>,
-    trophy: <><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a4 4 0 0 0 4 4m9-6h3v2a4 4 0 0 1-4 4"/></>,
-    gift: <><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M12 8H8.5a2.5 2.5 0 1 1 2.4-3.2L12 8Zm0 0h3.5a2.5 2.5 0 1 0-2.4-3.2L12 8Z"/></>,
-    menu: <><path d="M4 6h16M4 12h16M4 18h16"/></>,
+    route: <><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h3a3 3 0 0 0 3-3V9a3 3 0 0 1 3-3"/><path d="m14 12 3 3 3-3"/></>,
+    arena: <><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1zM17 5a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 5v1"/></>,
+    practice: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22z"/><path d="M4 5v14M8 7h8M8 11h7"/></>,
+    profile: <><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></>,
     arrow: <><path d="M5 12h14M13 6l6 6-6 6"/></>,
+    book: <><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H20v17H5.5A2.5 2.5 0 0 0 3 22z"/><path d="M3 5v14M7 7h9M7 11h8M7 15h6"/></>,
     spark: <><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></>,
+    heart: <path d="M20.8 8.8c0 5.1-8.8 10.2-8.8 10.2S3.2 13.9 3.2 8.8A4.8 4.8 0 0 1 12 6.2a4.8 4.8 0 0 1 8.8 2.6Z"/>,
+    camera: <><path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.5"/></>,
+    close: <><path d="m6 6 12 12M18 6 6 18"/></>,
+    target: <><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></>,
   };
   return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
 
+function UserAvatar({ photo, initials, variant = "avatar-aqua", className = "" }: { photo?: string; initials: string; variant?: string; className?: string }) {
+  return photo
+    ? <span className={`user-avatar ${className}`}><img src={photo} alt="Foto de perfil" /></span>
+    : <span className={`user-avatar ${variant} ${className}`} aria-label="Avatar">{initials}</span>;
+}
+
 export default function Home() {
-  const [hearts, setHearts] = useState<Record<string, number>>({ Valeria: 18, Mateo: 12, Sofía: 26 });
-  const [sent, setSent] = useState<string[]>([]);
+  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [user, setUser] = useState<{ email: string; name: string } | null>(null);
+  const [, setLoading] = useState(true);
+  const [appError, setAppError] = useState("");
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authCode, setAuthCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authMessage, setAuthMessage] = useState("");
+  const [authError, setAuthError] = useState("");
+  const ppm = dashboard?.stats.latestPpm ?? null;
+  const comprehension = dashboard?.stats.comprehension ?? null;
+  const displayName = dashboard?.user.name ?? user?.name ?? "Lector";
+  const [activeTab, setActiveTab] = useState<Tab>("Home");
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState<string>();
+  const [avatar, setAvatar] = useState(profileAvatars[0]);
   const [practiceOpen, setPracticeOpen] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [libraryKind, setLibraryKind] = useState<PracticeKind | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
   const [finished, setFinished] = useState(false);
-  const [answer, setAnswer] = useState("");
+  const [practice, setPractice] = useState<PracticeData | null>(null);
+  const [practiceTicket, setPracticeTicket] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [savingPractice, setSavingPractice] = useState(false);
+  const [practiceResult, setPracticeResult] = useState<{ rawActivePpm: number; comprehensionScore: number; correctAnswers: number; totalQuestions: number } | null>(null);
+
+  const milestone = clubs.find(value => ppm === null || ppm < value) ?? "+1500";
+  const previousMilestone = typeof milestone === "number" ? (clubs[clubs.indexOf(milestone) - 1] ?? 0) : 1500;
+  const milestoneProgress = ppm === null ? 0 : Math.min(100, Math.max(0, ((ppm - previousMilestone) / ((typeof milestone === "number" ? milestone : 1500) - previousMilestone || 1)) * 100));
+  const milestoneDistance = ppm === null ? milestone : typeof milestone === "number" ? Math.max(0, milestone - ppm) : 0;
+
+  useEffect(() => {
+    const syncTab = () => {
+      const requested = new URLSearchParams(window.location.search).get("tab");
+      setActiveTab(tabs.find(tab => tab.toLowerCase() === requested?.toLowerCase()) ?? "Home");
+    };
+    syncTab();
+    window.addEventListener("popstate", syncTab);
+    return () => window.removeEventListener("popstate", syncTab);
+  }, []);
 
   useEffect(() => {
     if (!running) return;
-    const timer = window.setInterval(() => setSeconds((value) => value + 1), 1000);
+    const timer = window.setInterval(() => { if (document.visibilityState === "visible") setSeconds((value) => value + 1); }, 1000);
     return () => window.clearInterval(timer);
   }, [running]);
 
-  const support = (name: string) => {
-    if (sent.includes(name)) return;
-    setHearts((current) => ({ ...current, [name]: current[name] + 1 }));
-    setSent((current) => [...current, name]);
+  useEffect(() => {
+    let cancelled = false;
+    const boot = async () => {
+      try {
+        const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const linkAccessToken = hash.get("access_token");
+        const linkRefreshToken = hash.get("refresh_token");
+        let signedInUser: { email: string; name: string } | null = null;
+        if (linkAccessToken && linkRefreshToken) {
+          const callback = await fetch("/api/auth/callback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accessToken: linkAccessToken, refreshToken: linkRefreshToken, expiresIn: hash.get("expires_in") }) });
+          const callbackData = await callback.json();
+          window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
+          if (!callback.ok) throw new Error(callbackData.error ?? "El enlace venció. Solicita otro código.");
+          signedInUser = callbackData.user;
+        } else {
+          const response = await fetch("/api/auth/session");
+          const data = await response.json();
+          signedInUser = data.user ?? null;
+        }
+        if (signedInUser) {
+          if (!cancelled) setUser(signedInUser);
+          const home = await fetch("/api/dashboard");
+          if (home.ok) {
+            const metrics = await home.json();
+            if (!cancelled) setDashboard(metrics);
+          } else if (home.status !== 401) {
+            const message = (await home.json()).error;
+            if (!cancelled) setAppError(message ?? "No pudimos cargar tu progreso.");
+          }
+        }
+      } catch (error) {
+        if (!cancelled) setAppError(error instanceof Error ? error.message : "No pudimos conectar con Speedeep. Comprueba tu conexión e inténtalo de nuevo.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void boot();
+    return () => { cancelled = true; };
+  }, []);
+
+  const refreshDashboard = async () => {
+    const response = await fetch("/api/dashboard");
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error ?? "No se pudo actualizar tu progreso.");
+    setDashboard(data);
+    setUser((current) => current ? { ...current, name: data.user.name } : current);
   };
 
-  const startPractice = () => {
-    setSeconds(0);
-    setAnswer("");
-    setFinished(false);
-    setPracticeOpen(true);
-    setRunning(true);
+  const openLibrary = (kind: PracticeKind = "reading") => {
+    if (!user) { setAuthOpen(true); setAuthError(""); return; }
+    setActiveTab("Prácticas"); setLibraryKind(kind);
+  };
+
+  const startPractice = async (articleId?: string) => {
+    setAppError("");
+    if (!user) { setAuthOpen(true); setAuthError(""); return; }
+    try {
+      const response = await fetch(articleId ? `/api/practice?articleId=${encodeURIComponent(articleId)}` : "/api/practice");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "No se pudo cargar la lectura.");
+      const startResponse = await fetch("/api/practice/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ articleId: data.article.id }) });
+      const startData = await startResponse.json();
+      if (!startResponse.ok) throw new Error(startData.error ?? "No se pudo iniciar el cronómetro seguro.");
+      setPractice(data);
+      setPracticeResult(null);
+      setAnswers({});
+      setPracticeTicket(startData.ticketId);
+      setSeconds(0);
+      setFinished(false);
+      setRunning(true);
+      setActiveTab("Prácticas");
+      setPracticeOpen(true);
+    } catch (error) {
+      setAppError(error instanceof Error ? error.message : "No se pudo iniciar la práctica.");
+    }
+  };
+
+  const requestCode = async () => {
+    setAuthBusy(true); setAuthError(""); setAuthMessage("");
+    try {
+      const response = await fetch("/api/auth/request", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: authEmail }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "No se pudo enviar el código.");
+      setCodeSent(true); setAuthMessage(data.message);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "No se pudo enviar el código.");
+    } finally { setAuthBusy(false); }
+  };
+
+  const verifyCode = async () => {
+    setAuthBusy(true); setAuthError("");
+    try {
+      const response = await fetch("/api/auth/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: authEmail, token: authCode }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "El código no es válido.");
+      setUser(data.user); setAuthOpen(false); setCodeSent(false); setAuthCode(""); setAuthMessage("");
+      await refreshDashboard();
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "No se pudo verificar el código.");
+    } finally { setAuthBusy(false); }
+  };
+
+  const submitPractice = async () => {
+    if (!practice || !practiceTicket) return;
+    setSavingPractice(true); setAppError("");
+    try {
+      const response = await fetch("/api/practice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+        articleId: practice.article.id,
+        ticketId: practiceTicket,
+        activeReadingSeconds: Math.max(seconds, 10),
+        responses: practice.questions.map((question) => ({ questionId: question.id, selectedIndex: answers[question.id] })),
+      }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "No se pudo guardar la práctica.");
+      setPracticeResult(data.result);
+      setRunning(false);
+      await refreshDashboard();
+    } catch (error) {
+      setAppError(error instanceof Error ? error.message : "No se pudo guardar la práctica.");
+    } finally { setSavingPractice(false); }
   };
 
   const endPractice = () => {
+    setPracticeOpen(false);
     setRunning(false);
-    setFinished(true);
+    setFinished(false);
+    setPractice(null);
+    setPracticeTicket(null);
+  };
+
+  const signOut = async () => {
+    try { await fetch("/api/auth/session", { method: "DELETE" }); }
+    finally { setUser(null); setDashboard(null); setProfileOpen(false); setProfilePhoto(undefined); }
+  };
+
+  const navigate = (tab: Tab) => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    if (tab === "Home") url.searchParams.delete("tab"); else url.searchParams.set("tab", tab.toLowerCase());
+    window.history.pushState({}, "", url);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+
+  const handlePhoto = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") setProfilePhoto(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
 
   const minutes = Math.floor(seconds / 60).toString().padStart(2, "0");
   const secs = (seconds % 60).toString().padStart(2, "0");
 
   return (
-    <main className="app-shell">
-      <aside className="sidebar">
-        <a className="brand" href="#inicio" aria-label="Speedeep, inicio">
-          <span className="brand-mark"><span /></span>
-          <span>speed<span className="brand-light">deep</span></span>
-        </a>
-        <div className="side-label">TU ESPACIO</div>
-        <nav className="side-nav" aria-label="Navegación principal">
-          <a className="nav-item active" href="#inicio"><Icon name="home"/>Inicio</a>
-          <a className="nav-item" href="#practica" onClick={(e) => { e.preventDefault(); startPractice(); }}><Icon name="book"/>Práctica <span className="nav-dot"/></a>
-          <a className="nav-item" href="#live"><Icon name="users"/>Live</a>
-          <a className="nav-item" href="#hitos"><Icon name="trophy"/>Hitos</a>
-          <a className="nav-item" href="#referidos"><Icon name="gift"/>Invita y gana</a>
-        </nav>
-        <div className="sidebar-bottom">
-          <div className="trial-small"><span className="trial-spark">✦</span><p>Prueba gratuita</p><strong>Día 3 <span>de 7</span></strong><div className="mini-progress"><i/></div><small>Tu avance sigue contigo.</small></div>
-          <button className="profile-button"><span className="avatar avatar-user">A</span><span className="profile-copy"><strong>Aldo</strong><small>Plan de prueba</small></span><span className="ellipsis">···</span></button>
-        </div>
-      </aside>
-
-      <section className="main-column" id="inicio">
-        <header className="topbar">
-          <button className="mobile-menu" aria-label="Abrir menú" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(true)}><Icon name="menu"/></button>
-          <div className="breadcrumb">Tu espacio <span>/</span> Inicio</div>
-          <div className="topbar-right"><span className="live-status"><i/> Tu progreso está al día</span><button className="help-button">?</button></div>
+    <main className="app-shell" id="inicio">
+      <div className="home-content">
+        <header className="mobile-header">
+          <button className="brand brand-button" onClick={() => navigate("Home")} aria-label="Speedeep, inicio">
+            <span className="brand-mark"><i/><i/><i/></span><span>spee<span>deep</span></span>
+          </button>
+          <div className="header-actions">
+            <button className="live-pill" onClick={() => navigate("Arena")} aria-label="Ir a Arena">Arena</button>
+            <button className="profile-shortcut" onClick={() => navigate("Perfil")} aria-label="Abrir perfil"><UserAvatar photo={profilePhoto} initials={displayName.slice(0, 1).toUpperCase()} variant={avatar}/></button>
+          </div>
         </header>
 
-        {mobileNavOpen && <><button className="mobile-drawer-backdrop" aria-label="Cerrar menú" onClick={() => setMobileNavOpen(false)}/><aside className="mobile-drawer"><div className="mobile-drawer-head"><a className="brand" href="#inicio" onClick={() => setMobileNavOpen(false)}><span className="brand-mark"><span/></span><span>speed<span className="brand-light">deep</span></span></a><button className="mobile-drawer-close" aria-label="Cerrar menú" onClick={() => setMobileNavOpen(false)}>×</button></div><p className="side-label">TU ESPACIO</p><nav className="side-nav" aria-label="Navegación móvil"><a className="nav-item active" href="#inicio" onClick={() => setMobileNavOpen(false)}><Icon name="home"/>Inicio</a><button className="nav-item" onClick={() => { setMobileNavOpen(false); startPractice(); }}><Icon name="book"/>Práctica</button><a className="nav-item" href="#live" onClick={() => setMobileNavOpen(false)}><Icon name="users"/>Live</a><a className="nav-item" href="#hitos" onClick={() => setMobileNavOpen(false)}><Icon name="trophy"/>Hitos</a><a className="nav-item" href="#referidos" onClick={() => setMobileNavOpen(false)}><Icon name="gift"/>Invita y gana</a></nav></aside></>}
+        {activeTab === "Home" && <>
+        <section className="welcome-section">
+          <p className="eyebrow">TU ESPACIO DE LECTURA</p>
+          <h1>Hola, {displayName.split(" ")[0]}</h1>
+          <p className="welcome-copy">Hoy puedes leer con más enfoque.</p>
+        </section>
 
-        <div className="page-content">
-          <div className="demo-notice"><span>VISTA DE DEMOSTRACIÓN</span><span>Los perfiles y métricas sociales son ilustrativos.</span></div>
+        <section className="today-card" id="practica" aria-labelledby="today-title">
+          <div className="today-copy">
+            <span className="today-kicker"><span className="sparkle">✦</span> TU SIGUIENTE PASO</span>
+            <h2 id="today-title">Continúa tu ruta</h2>
+            <p>Aprende a comprender y usar lo que lees, paso a paso.</p>
+          </div>
+          <div className="book-art" aria-hidden="true">
+            <span className="speed-line line-one"/><span className="speed-line line-two"/><span className="speed-line line-three"/>
+            <svg viewBox="0 0 220 140" fill="none">
+              <path d="M18 51c28-13 54-12 91 5v60c-35-16-61-18-91-4V51Z" fill="#F8FCFF"/>
+              <path d="M202 51c-28-13-54-12-93 5v60c37-16 63-18 93-4V51Z" fill="#D9F4F8"/>
+              <path d="M109 56v60M31 65c20-7 42-5 62 3M31 78c20-6 42-4 62 4M31 91c20-6 42-3 62 5M189 65c-20-7-42-5-62 3M189 78c-20-6-42-4-62 4M189 91c-20-6-42-3-62 5" stroke="#76B6C9" strokeWidth="3" strokeLinecap="round"/>
+              <path d="m163 28 20-12m-5 29 25-4" stroke="#42E1E1" strokeWidth="3" strokeLinecap="round"/>
+              <path d="m182 10 2 7 7 2-7 2-2 7-2-7-7-2 7-2 2-7Z" fill="#C4EC60"/>
+            </svg>
+          </div>
+          <button className="primary-cta" onClick={() => navigate("Ruta")}>Ver mi ruta <Icon name="arrow"/></button>
+        </section>
 
-          <section className="welcome-row">
-            <div>
-              <p className="eyebrow">TU PLAN DE HOY</p>
-              <h1>Hola, Aldo <span className="wave">✦</span></h1>
-              <p className="welcome-subtitle">Cinco minutos hoy también cuentan. ¿Seguimos?</p>
-            </div>
-            <div className="streak-pill"><span className="flame">♨</span><span><strong>3 días</strong><small>de racha</small></span><span className="streak-dots"><i className="done"/><i className="done"/><i className="done"/><i/><i/><i/><i/></span></div>
-          </section>
+        <section className="metric-grid" aria-label="Tu progreso actual">
+          <article className="metric-card metric-ppm"><span className="metric-icon"><Icon name="target"/></span><span className="metric-label">Ritmo</span><strong>{ppm === null ? "—" : Math.round(ppm)}{ppm !== null && <small> ppm</small>}</strong><small className="metric-note">{ppm === null ? "calibrando con varias lecturas" : "mediana de lecturas válidas"}</small></article>
+          <article className="metric-card metric-comprehension"><span className="metric-icon"><Icon name="spark"/></span><span className="metric-label">Comprensión</span><strong>{comprehension === null ? "—" : comprehension}{comprehension !== null && <small>%</small>}</strong><small className="metric-note">{comprehension === null ? "se activa con 3 prácticas" : "promedio de las últimas prácticas"}</small></article>
+          <article className="metric-card metric-streak"><span className="metric-icon streak-icon">✦</span><span className="metric-label">QSD</span><strong>—</strong><small className="metric-note">{dashboard?.stats.practicesCount ?? 0} prácticas · calibrando 6 habilidades</small></article>
+        </section>
 
-          <section className="hero-grid" id="practica">
-            <article className="speed-card">
-              <div className="card-top"><span className="label-on-dark">TU VELOCIDAD ACTUAL</span><span className="up-chip">↗ +14 ppm esta semana</span></div>
-              <div className="speed-main"><strong>184</strong><span>ppm</span><div className="speed-ring"><div><b>61%</b><small>de tu meta</small></div></div></div>
-              <div className="speed-bottom"><div><span>Tu meta: <b>300 ppm</b></span><div className="speed-progress"><i/></div></div><button className="button button-light" onClick={startPractice}>Continuar práctica <Icon name="arrow"/></button></div>
-              <div className="card-glow"/>
-            </article>
-            <article className="focus-card">
-              <div className="focus-icon"><Icon name="spark"/></div>
-              <p className="eyebrow">TU SIGUIENTE PASO</p>
-              <h2>Lee con intención</h2>
-              <p>Una práctica breve para cuidar velocidad y comprensión.</p>
-              <div className="focus-meta"><span>◷ 5 min</span><span>◉ Comprensión</span></div>
-              <button className="text-button" onClick={startPractice}>Empezar ahora <Icon name="arrow"/></button>
-            </article>
-          </section>
+        <section className="milestone-card" id="ruta" aria-labelledby="milestone-title">
+          <div className="milestone-art" aria-hidden="true"><span className="orbit orbit-one"/><span className="orbit orbit-two"/><span className="milestone-spark">✦</span><Icon name="book"/></div>
+          <div className="milestone-content">
+            <p className="eyebrow">TU PRÓXIMO HITO</p>
+            <h2 id="milestone-title">{ppm === null ? <>Tu primer hito: <strong>300 ppm</strong></> : <>Vas acercándote a los <strong>{milestone} ppm</strong></>}</h2>
+            <p className="milestone-club">{ppm === null ? "Se necesita evidencia de varias lecturas comparables" : `Referencia hacia ${milestone} ppm · club aún sin certificar`}</p>
+            <div className="progress-track" role="progressbar" aria-label={`Avance hacia ${milestone} ppm`} aria-valuenow={Math.round(milestoneProgress)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${milestoneProgress}%` }}/></div>
+            <div className="milestone-foot"><span>{ppm === null ? "El primer objetivo es 300 ppm con comprensión" : milestoneDistance ? `Diferencia: ${milestoneDistance} ppm` : "Sigue leyendo con comprensión"}</span><strong>{ppm === null ? "—" : `${Math.round(ppm)} / ${milestone} ppm`}</strong></div>
+          </div>
+          <div className="milestone-glow" aria-hidden="true"/>
+        </section>
 
-          <section className="lower-grid">
-            <article className="panel progress-panel">
-              <div className="panel-head"><div><p className="eyebrow">TU EVOLUCIÓN</p><h2>Más ritmo, más claridad</h2></div><button className="select-button">Esta semana⌄</button></div>
-              <div className="chart-wrap" aria-label="Gráfica ilustrativa de progreso semanal">
-                <div className="chart-y"><span>300</span><span>200</span><span>100</span><span>0</span></div>
-                <svg className="chart" viewBox="0 0 560 150" preserveAspectRatio="none" role="img" aria-label="Tendencia ascendente de velocidad de lectura">
-                  <defs><linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#59c0f3" stopOpacity=".22"/><stop offset="1" stopColor="#59c0f3" stopOpacity="0"/></linearGradient></defs>
-                  <path className="chart-gridline" d="M0 20H560M0 60H560M0 100H560M0 140H560"/>
-                  <path d="M0 127 C50 120 65 113 100 116 S160 91 195 102 S250 84 280 90 S333 61 370 74 S425 49 455 56 S515 28 560 23 V150 H0Z" fill="url(#chartFill)"/>
-                  <path d="M0 127 C50 120 65 113 100 116 S160 91 195 102 S250 84 280 90 S333 61 370 74 S425 49 455 56 S515 28 560 23" fill="none" stroke="#58bff1" strokeWidth="3" strokeLinecap="round"/>
-                  <circle cx="560" cy="23" r="5" fill="#fff" stroke="#58bff1" strokeWidth="3"/>
-                </svg>
-                <div className="chart-x"><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span><span>Hoy</span></div>
-              </div>
-              <div className="chart-foot"><span><i className="legend-dot"/> PPM por día</span><span>Tu ritmo mejora cuando vuelves.</span></div>
-            </article>
+        <section className="practice-nudge" aria-label="Continuar la ruta">
+          <span className="nudge-icon"><Icon name="route"/></span><div><strong>Tu próximo paso está en Ruta</strong><p>Aprende una habilidad y úsala en una lectura nueva.</p></div><button onClick={() => navigate("Ruta")} aria-label="Abrir ruta"><Icon name="arrow"/></button>
+        </section>
+        </>}
 
-            <article className="panel club-panel" id="hitos">
-              <div className="club-heading"><span className="club-medal"><Icon name="trophy"/></span><span className="club-tag">TU PRÓXIMO HITO</span></div>
-              <h2>Club de los 300</h2>
-              <p>Estás construyendo una lectura más ágil sin soltar la comprensión.</p>
-              <div className="club-count"><strong>116</strong><span>ppm para llegar</span><span className="mini-stars">✦ ✦ ✧</span></div>
-              <div className="club-bar"><i/></div>
-              <div className="club-bottom"><span>184 ppm</span><span>300 ppm</span></div>
-              <a href="#hitos" className="text-button">Ver mis hitos <Icon name="arrow"/></a>
-            </article>
-          </section>
+        {activeTab === "Ruta" && <Curriculum/>}
 
-          <section className="bottom-grid">
-            <article className="panel live-panel" id="live">
-              <div className="panel-head"><div><p className="eyebrow">AVANZAMOS EN COMUNIDAD</p><h2>Live <span className="live-count"><i/> 24 activos</span></h2></div><a href="#live" className="subtle-link">Ver comunidad <Icon name="arrow"/></a></div>
-              <div className="peer-list">{peers.map((peer) => <div className="peer-row" key={peer.name}><span className={`avatar avatar-${peer.color}`}>{peer.initials}</span><span className="peer-info"><strong>{peer.name}</strong><small>{peer.level}</small></span><span className="peer-ppm"><strong>{peer.ppm}</strong><small>ppm</small></span><button className={`heart-button ${sent.includes(peer.name) ? "sent" : ""}`} onClick={() => support(peer.name)} aria-label={`Enviar corazón a ${peer.name}`} disabled={sent.includes(peer.name)}><span>♥</span><small>{hearts[peer.name]}</small></button></div>)}</div>
-              <p className="social-footnote">Los corazones son una forma sencilla de decir: “vas muy bien”.</p>
-            </article>
-            <article className="panel referral-panel" id="referidos">
-              <div className="refer-icon"><Icon name="gift"/></div>
-              <p className="eyebrow">CRECE CON SPEEDEEP</p>
-              <h2>Invita y gana</h2>
-              <p>Comparte tu código. Recibe comisión por cada suscripción nueva y sus renovaciones.</p>
-              <div className="commission-row"><span>Nueva suscripción</span><strong>50%</strong></div><div className="commission-row"><span>Renovación</span><strong>30%</strong></div>
-              <div className="wallet-row"><span>Saldo para retirar <small>Retiros desde $1,000 MXN</small></span><strong>$0<span> MXN</span></strong></div>
-              <button className="button button-outline">Conocer mi panel <Icon name="arrow"/></button>
-            </article>
-          </section>
+        {activeTab === "Arena" && <section className="section-page" aria-labelledby="arena-heading">
+          <p className="eyebrow">COMPETENCIA ENTRE LECTORES</p><h1 id="arena-heading">Arena</h1>
+          <div className="route-notice"><strong>Las partidas en vivo estarán disponibles próximamente</strong><span>La sala conectará a participantes reales y medirá velocidad junto con comprensión. Aún no hay partidas ni rivales en esta versión.</span></div>
+        </section>}
 
-          <section className="subscription-banner">
-            <div className="sub-icon">✦</div><div className="sub-copy"><strong>Te quedan 4 días de práctica gratis</strong><span>Después, continúa por $990 MXN al mes. Cancela cuando quieras.</span></div><a className="sub-link" href="#planes">Conocer el plan <Icon name="arrow"/></a>
-          </section>
+        {activeTab === "Prácticas" && <section className="section-page" aria-labelledby="practice-heading">
+          <p className="eyebrow">LABORATORIO OPCIONAL</p><h1 id="practice-heading">Prácticas</h1>
+          <p>Entrena habilidades a tu ritmo. Los resultados de este espacio no desbloquean lecciones ni acreditan clubes.</p>
+          <div className="variety-grid">{practiceModes.map(mode => <button key={mode.kind} className={`variety-card variety-${mode.kind}`} onClick={() => openLibrary(mode.kind)}><span className="variety-mark" aria-hidden="true">{mode.mark}</span><strong>{mode.title}</strong><small>{mode.description}</small></button>)}</div>
+          <p className="section-note">Los destellos de números y palabras, las letras transpuestas y la ronda mixta se incorporarán como ejercicios adaptativos en esta sección.</p>
+        </section>}
 
-          <footer className="footer"><span>© 2026 Speedeep</span><span>Tu avance, a tu ritmo.</span><a href="#privacidad">Privacidad</a></footer>
-        </div>
-      </section>
+        {activeTab === "Perfil" && <section className="section-page" aria-labelledby="account-heading">
+          <p className="eyebrow">TU CUENTA</p><h1 id="account-heading">Perfil</h1>
+          <div className="account-card"><UserAvatar photo={profilePhoto} initials={displayName.slice(0, 1).toUpperCase()} variant={avatar} className="profile-large"/><div><strong>{displayName}</strong><span>{user?.email ?? "Inicia sesión para consultar tu cuenta"}</span></div></div>
+          <button className="secondary-action" onClick={() => setProfileOpen(true)}>Editar mi avatar</button>
+          <div className="account-card account-details"><div><strong>Membresía</strong><span>{!user ? "Inicia sesión para verla" : !dashboard ? "No disponible" : dashboard.membership ? ({trialing: "Periodo de prueba", active: "Activa", past_due: "Pago pendiente", canceled: "Cancelada", incomplete: "Incompleta", unpaid: "Sin pago", paused: "Pausada"} as Record<string, string>)[dashboard.membership.status] ?? dashboard.membership.status : "Sin registro de membresía"}</span>
+          {dashboard?.membership?.status === "trialing" && <span>Prueba hasta el {new Date(dashboard.membership.trial_ends_at).toLocaleDateString("es-MX")}</span>}
+          {dashboard?.membership?.current_period_ends_at && <span>Periodo hasta el {new Date(dashboard.membership.current_period_ends_at).toLocaleDateString("es-MX")}</span>}
+          {dashboard?.membership?.cancel_at_period_end && <span>Renovación cancelada al terminar el periodo</span>}</div></div>
+          {user ? <button className="secondary-action" onClick={signOut}>Cerrar sesión</button> : <button className="primary-cta" onClick={() => setAuthOpen(true)}>Entrar a mi cuenta</button>}
+        </section>}
+        {appError && <p className="app-alert" role="alert">{appError}</p>}
+      </div>
 
-      {practiceOpen && <div className="modal-backdrop" role="presentation"><section className="practice-modal" role="dialog" aria-modal="true" aria-labelledby="practice-title"><button className="modal-close" onClick={() => { setPracticeOpen(false); setRunning(false); }} aria-label="Cerrar práctica">×</button><div className="practice-modal-top"><span className="practice-tag">PRÁCTICA DE HOY · 5 MIN</span><span className="timer">{minutes}:{secs}</span></div><h2 id="practice-title">Lee con intención</h2>{!finished ? <><p className="practice-instructions">Lee el texto a tu ritmo. Cuando termines, selecciona “Ya terminé” para revisar tu comprensión.</p><div className="passage">{passage}</div><button className="button button-primary modal-action" onClick={endPractice}>Ya terminé <Icon name="arrow"/></button></> : <><p className="practice-instructions">¿Cuál era la idea principal del texto?</p><div className="answer-list">{["La lectura rápida busca terminar antes que los demás.", "Leer con intención mejora el ritmo y ayuda a retener lo leído.", "Releer varias veces es la mejor forma de aumentar velocidad."].map((option, index) => <button key={option} className={`answer-option ${answer === option ? "chosen" : ""}`} onClick={() => setAnswer(option)}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div>{answer && <div className="answer-feedback">{answer.startsWith("Leer con intención") ? "¡Correcto! Captaste la idea principal." : "Buen intento. La práctica se enfoca en avanzar con comprensión."}</div>}<button className="button button-primary modal-action" onClick={() => { setPracticeOpen(false); setRunning(false); }} disabled={!answer}>Terminar práctica <Icon name="arrow"/></button></>}</section></div>}
+      <nav className="bottom-nav" aria-label="Navegación principal">
+        {([{ label: "Home", icon: "home" }, { label: "Ruta", icon: "route" }, { label: "Arena", icon: "arena" }, { label: "Prácticas", icon: "practice" }, { label: "Perfil", icon: "profile" }] as const).map((item) => <button key={item.label} className={`nav-tab ${activeTab === item.label ? "active" : ""}`} onClick={() => navigate(item.label)} aria-current={activeTab === item.label ? "page" : undefined}><Icon name={item.icon}/><span>{item.label}</span></button>)}
+      </nav>
+
+      {libraryKind && <PracticeLibrary initialKind={libraryKind} onClose={() => setLibraryKind(null)} onRead={id => { setLibraryKind(null); void startPractice(id); }}/>} 
+
+      {profileOpen && <div className="sheet-backdrop" onClick={() => setProfileOpen(false)}><section className="profile-sheet" role="dialog" aria-modal="true" aria-labelledby="profile-title" onClick={(event) => event.stopPropagation()}>
+        <div className="sheet-handle"/><button className="sheet-close" onClick={() => setProfileOpen(false)} aria-label="Cerrar perfil"><Icon name="close"/></button>
+        <p className="eyebrow">TU CUENTA</p><h2 id="profile-title">Tu perfil</h2>
+        <div className="profile-editor"><UserAvatar photo={profilePhoto} initials={displayName.slice(0, 1).toUpperCase()} variant={avatar} className="profile-large"/><div><strong>{displayName}</strong><span>{user?.email ?? "Inicia sesión para sincronizar tu progreso"}</span></div></div>
+        <p className="avatar-label">Elige cómo quieres aparecer</p>
+        <div className="avatar-options">{profileAvatars.map((variant) => <button key={variant} className={`avatar-option ${variant} ${avatar === variant && !profilePhoto ? "selected" : ""}`} onClick={() => { setAvatar(variant); setProfilePhoto(undefined); }} aria-label="Usar avatar"/>)}<label className="upload-avatar"><Icon name="camera"/><span>Subir foto</span><input type="file" accept="image/*" onChange={handlePhoto}/></label></div>
+        <p className="profile-note">Puedes usar una foto tuya o elegir un avatar. La foto solo se conserva en este dispositivo por ahora.</p>
+        {user ? <button className="secondary-action" onClick={signOut}>Cerrar sesión</button> : <button className="secondary-action" onClick={() => { setProfileOpen(false); setAuthOpen(true); }}>Entrar a mi cuenta</button>}
+      </section></div>}
+
+      {practiceOpen && practice && <div className="sheet-backdrop practice-backdrop" onClick={endPractice}><section className="practice-sheet" role="dialog" aria-modal="true" aria-labelledby="practice-title" onClick={(event) => event.stopPropagation()}>
+        <div className="sheet-handle"/><button className="sheet-close" onClick={endPractice} aria-label="Cerrar práctica"><Icon name="close"/></button>
+        <div className="practice-topline"><span>{finished ? "REVISA LO QUE LEÍSTE" : "LECTURA CRONOMETRADA"}</span><strong>{minutes}:{secs}</strong></div><h2 id="practice-title">{practiceResult ? "Práctica guardada" : practice.article.title}</h2>
+        {practiceResult ? <><p className="practice-instructions">Tu resultado quedó guardado en tu cuenta.</p><div className="result-grid"><div><strong>{Math.round(practiceResult.rawActivePpm)}</strong><span>ppm en esta lectura</span></div><div><strong>{practiceResult.comprehensionScore}%</strong><span>comprensión en esta práctica</span></div><div><strong>{practiceResult.correctAnswers}/{practiceResult.totalQuestions}</strong><span>respuestas</span></div></div><button className="primary-cta practice-action" onClick={endPractice}>Volver al inicio <Icon name="arrow"/></button></> : !finished ? <><p className="practice-instructions">Lee el texto a tu ritmo. El cronómetro mide solo esta lectura; al terminar, se detiene mientras respondes. Para una medición válida, lee durante al menos 10 segundos.</p><div className="passage">{practice.article.body}</div><button className="primary-cta practice-action" disabled={seconds < 10} onClick={() => { setRunning(false); setFinished(true); }}>{seconds < 10 ? "Lee un poco más…" : "Ya terminé de leer"} <Icon name="arrow"/></button></> : <><p className="practice-instructions">Responde para guardar la práctica. Tus respuestas se califican de forma segura.</p><div className="question-stack">{practice.questions.map((question, qIndex) => <div className="question-block" key={question.id}><strong>{qIndex + 1}. {question.prompt}</strong><div className="answer-list">{question.options.map((option, index) => <button key={`${question.id}-${index}`} className={`answer-option ${answers[question.id] === index ? "chosen" : ""}`} onClick={() => setAnswers((current) => ({ ...current, [question.id]: index }))}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div></div>)}</div>{appError && <p className="inline-error" role="alert">{appError}</p>}<button className="primary-cta practice-action" disabled={savingPractice || practice.questions.some((question) => answers[question.id] === undefined)} onClick={submitPractice}>{savingPractice ? "Guardando…" : "Guardar mi resultado"} <Icon name="arrow"/></button></>}
+      </section></div>}
+
+      {authOpen && <div className="sheet-backdrop" onClick={() => setAuthOpen(false)}><section className="profile-sheet auth-sheet" role="dialog" aria-modal="true" aria-labelledby="auth-title" onClick={(event) => event.stopPropagation()}>
+        <div className="sheet-handle"/><button className="sheet-close" onClick={() => setAuthOpen(false)} aria-label="Cerrar acceso"><Icon name="close"/></button><p className="eyebrow">TU PROGRESO, A TU RITMO</p><h2 id="auth-title">{codeSent ? "Revisa tu correo" : "Entra a Speedeep"}</h2>
+        {!codeSent ? <><p className="practice-instructions">Te enviaremos un enlace o código de un solo uso para guardar y consultar tus prácticas.</p><label className="form-label" htmlFor="auth-email">Correo electrónico</label><input id="auth-email" className="text-input" type="email" autoComplete="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="tu@correo.com"/><button className="primary-cta" disabled={authBusy || !authEmail} onClick={requestCode}>{authBusy ? "Enviando…" : "Enviar acceso"}</button></> : <><p className="practice-instructions">Abre el enlace del correo para entrar automáticamente. Si recibiste un código, escríbelo aquí. Correo: <strong>{authEmail}</strong>.</p><label className="form-label" htmlFor="auth-code">Código de acceso</label><input id="auth-code" className="text-input" inputMode="numeric" autoComplete="one-time-code" value={authCode} onChange={(event) => setAuthCode(event.target.value.replace(/\D/g, "").slice(0, 8))} placeholder="000000"/><button className="primary-cta" disabled={authBusy || authCode.length < 6} onClick={verifyCode}>{authBusy ? "Verificando…" : "Verificar y continuar"}</button><button className="text-action" onClick={() => { setCodeSent(false); setAuthCode(""); }}>Usar otro correo</button></>}
+        {authMessage && <p className="success-note">{authMessage}</p>}{authError && <p className="inline-error" role="alert">{authError}</p>}
+      </section></div>}
     </main>
   );
 }

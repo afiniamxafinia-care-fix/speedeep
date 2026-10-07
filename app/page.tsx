@@ -5,11 +5,12 @@ import PracticeLibrary, { practiceModes, type PracticeKind } from "@/app/compone
 import Curriculum from "@/app/components/Curriculum";
 import MissionOne from "@/app/components/MissionOne";
 import Diagnostic from "@/app/components/Diagnostic";
+import FlashNumbers from "@/app/components/FlashNumbers";
 
 type IconName = "home" | "route" | "arena" | "practice" | "profile" | "arrow" | "book" | "spark" | "heart" | "camera" | "close" | "target";
 type PracticeQuestion = { id: string; prompt: string; options: string[] };
 type PracticeData = { article: { id: string; title: string; body: string; word_count: number; estimated_minutes: number }; questions: PracticeQuestion[] };
-type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; comprehension: number | null; practicesCount: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; completedCount: number; lastTransferCorrect: number | null; diagnosticStatus: "not_started" | "active" | "completed"; diagnosticStep: number | null } };
+type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; comprehension: number | null; practicesCount: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; completedCount: number; lastTransferCorrect: number | null; diagnosticStatus: "not_started" | "active" | "completed"; diagnosticStep: number | null }; lab: { numbersRank: number; numbersRounds: number } };
 type Tab = "Home" | "Ruta" | "Arena" | "Prácticas" | "Perfil";
 const tabs: Tab[] = ["Home", "Ruta", "Arena", "Prácticas", "Perfil"];
 const clubs = [300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500];
@@ -60,6 +61,7 @@ export default function Home() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [missionOpen, setMissionOpen] = useState(false);
   const [diagnosticOpen, setDiagnosticOpen] = useState(false);
+  const [flashOrigin, setFlashOrigin] = useState<"route" | "lab" | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string>();
   const [avatar, setAvatar] = useState(profileAvatars[0]);
   const [practiceOpen, setPracticeOpen] = useState(false);
@@ -319,7 +321,7 @@ export default function Home() {
         </section>
         </>}
 
-        {activeTab === "Ruta" && <Curriculum diagnosticStatus={dashboard?.curriculum.diagnosticStatus} diagnosticStep={dashboard?.curriculum.diagnosticStep} onDiagnostic={() => { if (!user) setAuthOpen(true); else setDiagnosticOpen(true); }} activeStep={dashboard?.curriculum.activeStep} completedCount={dashboard?.curriculum.completedCount} onStart={() => { if (!user) setAuthOpen(true); else setMissionOpen(true); }}/>} 
+        {activeTab === "Ruta" && <Curriculum diagnosticStatus={dashboard?.curriculum.diagnosticStatus} diagnosticStep={dashboard?.curriculum.diagnosticStep} onDiagnostic={() => { if (!user) setAuthOpen(true); else setDiagnosticOpen(true); }} onFlash={() => { if (!user) setAuthOpen(true); else setFlashOrigin("route"); }} activeStep={dashboard?.curriculum.activeStep} completedCount={dashboard?.curriculum.completedCount} onStart={() => { if (!user) setAuthOpen(true); else setMissionOpen(true); }}/>} 
 
         {activeTab === "Arena" && <section className="section-page" aria-labelledby="arena-heading">
           <p className="eyebrow">COMPETENCIA ENTRE LECTORES</p><h1 id="arena-heading">Arena</h1>
@@ -329,8 +331,9 @@ export default function Home() {
         {activeTab === "Prácticas" && <section className="section-page" aria-labelledby="practice-heading">
           <p className="eyebrow">LABORATORIO OPCIONAL</p><h1 id="practice-heading">Prácticas</h1>
           <p>Entrena habilidades a tu ritmo. Los resultados de este espacio no desbloquean lecciones ni acreditan clubes.</p>
+          <button className="flash-lab-card" onClick={() => { if (!user) setAuthOpen(true); else setFlashOrigin("lab"); }}><span>✦</span><strong>Cifras fugaces</strong><small>{dashboard?.lab.numbersRounds ? `${3 + Math.floor(dashboard.lab.numbersRank / 3)} dígitos · escalón ${dashboard.lab.numbersRank % 3 + 1}/3 · ${dashboard.lab.numbersRounds} rondas` : "Ocho destellos · nivel adaptativo compartido con Ruta"}</small><b aria-hidden="true">→</b></button>
           <div className="variety-grid">{practiceModes.map(mode => <button key={mode.kind} className={`variety-card variety-${mode.kind}`} onClick={() => openLibrary(mode.kind)}><span className="variety-mark" aria-hidden="true">{mode.mark}</span><strong>{mode.title}</strong><small>{mode.description}</small></button>)}</div>
-          <p className="section-note">Los destellos de números y palabras, las letras transpuestas y la ronda mixta se incorporarán como ejercicios adaptativos en esta sección.</p>
+          <p className="section-note">Los destellos de palabras, las letras transpuestas y la ronda mixta se incorporarán después con su propio progreso.</p>
         </section>}
 
         {activeTab === "Perfil" && <section className="section-page" aria-labelledby="account-heading">
@@ -354,6 +357,7 @@ export default function Home() {
       {libraryKind && <PracticeLibrary initialKind={libraryKind} onClose={() => setLibraryKind(null)} onRead={id => { setLibraryKind(null); void startPractice(id); }}/>} 
       {missionOpen && <MissionOne onClose={() => { setMissionOpen(false); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }}/>} 
       {diagnosticOpen && <Diagnostic onClose={() => { setDiagnosticOpen(false); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }} onFinish={() => { void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }}/>} 
+      {flashOrigin && <FlashNumbers origin={flashOrigin} onClose={() => { setFlashOrigin(null); void refreshDashboard().catch(error => setAppError(error instanceof Error ? error.message : "No se pudo actualizar tu progreso.")); }}/>} 
 
       {profileOpen && <div className="sheet-backdrop" onClick={() => setProfileOpen(false)}><section className="profile-sheet" role="dialog" aria-modal="true" aria-labelledby="profile-title" onClick={(event) => event.stopPropagation()}>
         <div className="sheet-handle"/><button className="sheet-close" onClick={() => setProfileOpen(false)} aria-label="Cerrar perfil"><Icon name="close"/></button>

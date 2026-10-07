@@ -15,13 +15,14 @@ const currentLevel = {
 type Props = {
   onStart: () => void;
   onDiagnostic: () => void;
+  onFlash: () => void;
   diagnosticStatus?: "not_started" | "active" | "completed";
   diagnosticStep?: number | null;
   activeStep?: number | null;
   completedCount?: number;
 };
 
-export default function Curriculum({ onStart, onDiagnostic, diagnosticStatus, diagnosticStep, activeStep, completedCount = 0 }: Props) {
+export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticStatus, diagnosticStep, activeStep, completedCount = 0 }: Props) {
   const practicedFirst = completedCount > 0;
   return <section className="section-page learning-route" aria-labelledby="route-heading">
     <p className="eyebrow">TU RUTA · {currentLevel.label.toUpperCase()}</p>
@@ -42,7 +43,7 @@ export default function Curriculum({ onStart, onDiagnostic, diagnosticStatus, di
     <ol className="route-steps" aria-label={`Lecciones de ${currentLevel.label}`}>
       {currentLevel.lessons.map((lesson, index) => {
         const available = index === 0;
-        return <li key={lesson.title} className={`route-step ${available ? "route-step-current" : "route-step-locked"}`}>
+        const card = <li key={lesson.title} className={`route-step ${available ? "route-step-current" : "route-step-locked"}`}>
           <span className="route-step-marker" aria-hidden="true">{available ? "○" : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>}</span>
           <div className="route-step-copy">
             <span>{currentLevel.label.toUpperCase()} · LECCIÓN {index + 1}</span>
@@ -52,6 +53,12 @@ export default function Curriculum({ onStart, onDiagnostic, diagnosticStatus, di
           {available ? <button className="route-step-action" aria-label={`${activeStep ? "Retomar" : practicedFirst ? "Volver a practicar" : "Abrir"} lección 1: ${lesson.title}`} onClick={onStart}>{activeStep ? "Seguir" : practicedFirst ? "Repetir" : "Empezar"}<span aria-hidden="true">→</span></button>
             : <span className="route-step-status">Próximamente</span>}
         </li>;
+        if (!available) return card;
+        return [card, <li key="numbers-break" className={`route-break ${practicedFirst ? "route-break-ready" : "route-break-waiting"}`}>
+          <span className="route-break-icon" aria-hidden="true">✦</span>
+          <div><span>PAUSA CURIOSA · DESPUÉS DE LA LECCIÓN 1</span><strong>Cifras fugaces</strong><small>Ocho destellos para retar tu atención. Cuenta solo para tu nivel de Prácticas.</small></div>
+          <button disabled={!practicedFirst} onClick={onFlash}>{practicedFirst ? "Jugar" : "Al completar 1"}</button>
+        </li>];
       })}
     </ol>
 

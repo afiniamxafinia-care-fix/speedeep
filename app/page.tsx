@@ -10,7 +10,7 @@ import FlashNumbers from "@/app/components/FlashNumbers";
 type IconName = "home" | "route" | "arena" | "practice" | "profile" | "arrow" | "book" | "spark" | "heart" | "camera" | "close" | "target";
 type PracticeQuestion = { id: string; prompt: string; options: string[] };
 type PracticeData = { article: { id: string; title: string; body: string; word_count: number; estimated_minutes: number }; questions: PracticeQuestion[] };
-type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; comprehension: number | null; practicesCount: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; completedCount: number; lastTransferCorrect: number | null; diagnosticStatus: "not_started" | "active" | "completed"; diagnosticStep: number | null }; lab: { numbersRank: number; numbersRounds: number } };
+type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; comprehension: number | null; practicesCount: number; readingsCount: number; trainingCount: number; flashRounds: number; diagnosticCompleted: boolean; lessonsCompleted: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; completedCount: number; lastTransferCorrect: number | null; sentenceActionState: "not_started" | "completed" | "demonstrated"; diagnosticStatus: "not_started" | "active" | "completed"; diagnosticStep: number | null }; lab: { numbersRank: number; numbersRounds: number } };
 type Tab = "Home" | "Ruta" | "Arena" | "Prácticas" | "Perfil";
 const tabs: Tab[] = ["Home", "Ruta", "Arena", "Prácticas", "Perfil"];
 const clubs = [300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500];
@@ -300,8 +300,22 @@ export default function Home() {
 
         <section className="metric-grid" aria-label="Tu progreso actual">
           <article className="metric-card metric-ppm"><span className="metric-icon"><Icon name="target"/></span><span className="metric-label">Ritmo</span><strong>{ppm === null ? "—" : Math.round(ppm)}{ppm !== null && <small> ppm</small>}</strong><small className="metric-note">{ppm === null ? "calibrando con varias lecturas" : "mediana de lecturas válidas"}</small></article>
-          <article className="metric-card metric-comprehension"><span className="metric-icon"><Icon name="spark"/></span><span className="metric-label">Comprensión</span><strong>{comprehension === null ? "—" : comprehension}{comprehension !== null && <small>%</small>}</strong><small className="metric-note">{comprehension === null ? "se activa con 3 prácticas" : "promedio de las últimas prácticas"}</small></article>
-          <article className="metric-card metric-streak"><span className="metric-icon streak-icon">✦</span><span className="metric-label">QSD</span><strong>—</strong><small className="metric-note">{dashboard?.stats.practicesCount ?? 0} prácticas · calibrando 6 habilidades</small></article>
+          <article className="metric-card metric-comprehension"><span className="metric-icon"><Icon name="spark"/></span><span className="metric-label">Comprensión</span><strong>{comprehension === null ? "—" : comprehension}{comprehension !== null && <small>%</small>}</strong><small className="metric-note">{comprehension === null ? `${dashboard?.stats.readingsCount ?? 0} lecturas · se muestra con 3 válidas` : "promedio de lecturas válidas"}</small></article>
+          <article className="metric-card metric-streak"><span className="metric-icon streak-icon">✦</span><span className="metric-label">QSD</span><strong>—</strong><small className="metric-note">Requiere evidencia de seis habilidades</small></article>
+        </section>
+
+        <section className="activity-summary" aria-label="Actividad registrada">
+          <div><p className="eyebrow">TU ACTIVIDAD</p><h2>Lo que ya hiciste cuenta</h2></div>
+          <div className="activity-items">
+            <span><strong>{dashboard?.stats.diagnosticCompleted ? "✓" : "—"}</strong> Diagnóstico</span>
+            <span><strong>{dashboard?.stats.lessonsCompleted ?? 0}</strong> lecciones</span>
+            <span><strong>{dashboard?.stats.flashRounds ?? 0}</strong> rondas de cifras</span>
+            <span><strong>{dashboard?.stats.readingsCount ?? 0}</strong> lecturas</span>
+            <span><strong>{dashboard?.stats.trainingCount ?? 0}</strong> ejercicios</span>
+          </div>
+          {dashboard?.curriculum.sentenceActionState === "completed" && <p className="activity-skill">1.1 completada · comprobarás la habilidad con oraciones nuevas en otra sesión.</p>}
+          {dashboard?.curriculum.sentenceActionState === "demonstrated" && <p className="activity-skill">✓ Acción central demostrada en distintas sesiones.</p>}
+          <small>El laboratorio registra tus rondas; QSD y clubes requieren evaluaciones de lectura comparables.</small>
         </section>
 
         <section className="milestone-card" id="ruta" aria-labelledby="milestone-title">
@@ -321,7 +335,7 @@ export default function Home() {
         </section>
         </>}
 
-        {activeTab === "Ruta" && <Curriculum diagnosticStatus={dashboard?.curriculum.diagnosticStatus} diagnosticStep={dashboard?.curriculum.diagnosticStep} onDiagnostic={() => { if (!user) setAuthOpen(true); else setDiagnosticOpen(true); }} onFlash={() => { if (!user) setAuthOpen(true); else setFlashOrigin("route"); }} activeStep={dashboard?.curriculum.activeStep} completedCount={dashboard?.curriculum.completedCount} onStart={() => { if (!user) setAuthOpen(true); else setMissionOpen(true); }}/>} 
+        {activeTab === "Ruta" && <Curriculum diagnosticStatus={dashboard?.curriculum.diagnosticStatus} diagnosticStep={dashboard?.curriculum.diagnosticStep} onDiagnostic={() => { if (!user) setAuthOpen(true); else setDiagnosticOpen(true); }} onFlash={() => { if (!user) setAuthOpen(true); else setFlashOrigin("route"); }} activeStep={dashboard?.curriculum.activeStep} completedCount={dashboard?.curriculum.completedCount} sentenceActionState={dashboard?.curriculum.sentenceActionState} onStart={() => { if (!user) setAuthOpen(true); else setMissionOpen(true); }}/>} 
 
         {activeTab === "Arena" && <section className="section-page" aria-labelledby="arena-heading">
           <p className="eyebrow">COMPETENCIA ENTRE LECTORES</p><h1 id="arena-heading">Arena</h1>

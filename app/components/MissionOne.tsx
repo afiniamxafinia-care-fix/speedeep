@@ -66,12 +66,12 @@ export default function MissionOne({ onClose }: { onClose: () => void }) {
     {!state && !error && <p className="practice-instructions" role="status">Preparando tu misión…</p>}
     {state?.status === "completed" ? <>
       <p className="practice-instructions">Identificaste la acción central {state.transferCorrect} de 2 veces en el primer intento de las oraciones nuevas. Tu sesión quedó guardada.</p>
-      <p className="answer-feedback">{state.transferCorrect === 2 ? "Buen comienzo. El dominio requiere más casos nuevos y recuperación en otra sesión." : "Vuelve a practicar. En la próxima sesión encontrarás oraciones distintas para comprobar tu avance."}</p>
-      <p className="practice-instructions">Este resultado no certifica la habilidad ni desbloquea todavía la 1.2.</p>
+      <p className="answer-feedback">{state.transferCorrect === 2 ? "Buen trabajo. Volveremos a comprobar esta habilidad con oraciones distintas en otra sesión." : "Encontraste algunas acciones centrales. Las siguientes oraciones te ayudarán a afinarlo."}</p>
+      <p className="practice-instructions">La habilidad se demuestra con material nuevo y una comprobación posterior. La siguiente lección sigue en preparación.</p>
       <button className="primary-cta" onClick={onClose}>Volver a la ruta</button>
     </> : current && <>
       <p className="practice-instructions">{current.role === "probe" ? "Descubre quién hizo qué, incluso con detalles en medio." : current.role === "guided" ? "Observa el orden y la negación. Si fallas, vuelve a intentarlo con una pista." : "Aplica lo aprendido en una oración nueva sin pistas previas."}</p>
-      <div className="mission-progress">{current.role === "probe" ? "Primer intento" : current.role === "guided" ? "Práctica con corrección" : "Aplicación sin ayuda"} · {current.step} de 6</div>
+      <div className="mission-progress">{current.role === "probe" ? "Explora" : current.role === "guided" ? "Practica" : "Aplica sin ayuda"} · {current.step} de 6</div>
       <div className="passage exercise-context">{current.sentence}</div>
       <p className="form-label">{current.question}</p>
       <div className="answer-list">{current.options.map((option, index) => <button key={`${current.step}-${index}`} className={`answer-option ${chosen === index ? "chosen" : ""}`} disabled={busy || chosen !== null} onClick={() => { void choose(index); }}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div>

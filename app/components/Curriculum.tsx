@@ -20,9 +20,10 @@ type Props = {
   diagnosticStep?: number | null;
   activeStep?: number | null;
   completedCount?: number;
+  sentenceActionState?: "not_started" | "completed" | "demonstrated";
 };
 
-export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticStatus, diagnosticStep, activeStep, completedCount = 0 }: Props) {
+export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticStatus, diagnosticStep, activeStep, completedCount = 0, sentenceActionState }: Props) {
   const practicedFirst = completedCount > 0;
   return <section className="section-page learning-route" aria-labelledby="route-heading">
     <p className="eyebrow">TU RUTA · {currentLevel.label.toUpperCase()}</p>
@@ -50,7 +51,7 @@ export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticS
           <div className="route-step-copy">
             <span>{currentLevel.label.toUpperCase()} · LECCIÓN {index + 1}</span>
             <strong>{lesson.title}</strong>
-            <small>{available ? activeStep ? `En curso · paso ${activeStep} de 6` : completed ? "Completada · seguiremos observando esta habilidad en misiones nuevas" : lesson.description : "Esta lección está en preparación"}</small>
+            <small>{available ? activeStep ? `En curso · paso ${activeStep} de 6` : sentenceActionState === "demonstrated" ? "Habilidad demostrada con oraciones nuevas y recuperación posterior" : completed ? "Completada · comprueba la habilidad con oraciones nuevas" : lesson.description : "Esta lección está en preparación"}</small>
           </div>
           {available ? <button className={`route-step-action ${completed ? "route-step-action-optional" : ""}`} aria-label={`${activeStep ? "Retomar" : completed ? "Practicar de nuevo, opcional" : "Abrir"} lección 1: ${lesson.title}`} onClick={onStart}>{activeStep ? "Seguir" : completed ? "Practicar" : "Empezar"}<span aria-hidden="true">→</span></button>
             : <span className="route-step-status">Próximamente</span>}

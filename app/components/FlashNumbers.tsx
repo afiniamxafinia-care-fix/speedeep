@@ -85,18 +85,20 @@ export default function FlashNumbers({ origin, onClose }: { origin: "route" | "l
   return <div className="sheet-backdrop library-backdrop" onClick={onClose}><section className="profile-sheet library-sheet flash-sheet" role="dialog" aria-modal="true" aria-labelledby="flash-title" onClick={event => event.stopPropagation()}>
     <button className="sheet-close" onClick={onClose} aria-label="Cerrar reto">×</button>
     <p className="eyebrow">{origin === "diagnostic" ? "CALIBRACIÓN INICIAL · CIFRAS FUGACES" : "PAUSA CURIOSA · CIFRAS FUGACES"}</p><h2 id="flash-title">¿Cuál cifra apareció?</h2>
-    <p className="practice-instructions">{origin === "diagnostic" ? "Ocho destellos a un ritmo cómodo nos ayudan a iniciar tu nivel visual. Esta ronda también se guarda en Prácticas." : "Ocho destellos. Mira la cifra y elige exactamente la que viste. Tu nivel se guarda en Prácticas, vengas de Ruta o del laboratorio."}</p>
+    <p className="practice-instructions">{origin === "diagnostic" ? "Mira cada cifra y elige la que viste. Tu primera ronda encontrará un punto de partida cómodo." : "Mira cada cifra y elige la que viste. Tu progreso se guarda en Prácticas."}</p>
     {!state && !error && <p role="status">Preparando tu reto…</p>}
     {state?.status === "active" && <>
-      <div className="mission-progress">Destello {state.position} de 8 · {state.digits} dígitos · {state.exposureMs} ms</div>
+      <div className="mission-progress">Destello {state.position} de 8</div>
       <div className="flash-stage" aria-live="off">{phase === "flash" ? <strong>{state.target}</strong> : phase === "ready" ? <span>Respira y prepárate.</span> : <span>Elige lo que viste ↓</span>}</div>
-      {phase === "ready" && <button className="primary-cta practice-action" disabled={busy} onClick={showFlash}>Mostrar cifra</button>}
-      {phase === "pick" && <div className="flash-answers">{state.options.map((option,index) => <button className="answer-option" disabled={busy} key={`${state.position}-${index}`} onClick={() => void answer(index)}><span>{String.fromCharCode(65+index)}</span>{option}</button>)}</div>}
+      <div className="flash-control-slot">
+        {phase === "ready" && <button className="primary-cta practice-action" disabled={busy} onClick={showFlash}>Mostrar cifra</button>}
+        {phase === "pick" && <div className="flash-answers">{state.options.map((option,index) => <button className="answer-option" disabled={busy} key={`${state.position}-${index}`} onClick={() => void answer(index)}><span>{String.fromCharCode(65+index)}</span>{option}</button>)}</div>}
+      </div>
     </>}
     {state?.status === "completed" && <>
       <div className="training-result"><strong>{state.correct}<small>/8</small></strong><span>Ronda completada · {state.played.digits} dígitos</span></div>
-      <p className="answer-feedback">{origin === "diagnostic" ? "Punto de partida provisional" : "Tu nivel de Cifras fugaces"}: {state.level.digits} dígitos, escalón {state.level.step+1} de 3. Llevas {state.level.roundsCompleted} rondas completas.</p>
-      <p className="practice-instructions">Dos rondas consecutivas de 7/8 o más suben un escalón. Una ronda de 3/8 o menos, o dos de 5/8 o menos, bajan uno. Al crecer la cifra, el tiempo vuelve a ser cómodo.</p>
+      <p className="answer-feedback">{origin === "diagnostic" ? "Tu punto de partida" : "Tu reto actual"}: {state.level.digits} dígitos. Llevas {state.level.roundsCompleted} rondas completas.</p>
+      <p className="practice-instructions">La próxima ronda se ajustará a tus respuestas.</p>
       {origin !== "diagnostic" && <button className="primary-cta practice-action" disabled={busy} onClick={() => void begin()}>Otra ronda</button>}
       <button className={origin === "diagnostic" ? "primary-cta practice-action" : "secondary-action"} onClick={onClose}>{origin === "diagnostic" ? "Ver mi ruta" : "Volver"}</button>
     </>}

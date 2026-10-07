@@ -6,7 +6,7 @@ type Case = { step: number; role: "probe" | "guided" | "transfer"; sentence: str
 type State = { attemptId: string; status: "active" | "completed"; variant: string; case?: Case; retryPending?: boolean; priorFeedback?: string | null; transferCorrect?: number };
 type Feedback = { feedback: string; correct: boolean; retryNeeded: boolean; completed: boolean; transferCorrect: number | null };
 
-export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" | "1.2"; onClose: () => void }) {
+export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" | "1.2" | "1.3"; onClose: () => void }) {
   const [state, setState] = useState<State | null>(null);
   const [chosen, setChosen] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
@@ -60,14 +60,16 @@ export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" 
   }
 
   const current = state?.case;
-  const instruction = lessonCode === "1.2"
+  const instruction = lessonCode === "1.3"
+    ? current?.step === 1 ? "Recuerda la acción central." : current?.step === 2 ? "Agrupa las palabras que van juntas." : current?.role === "transfer" ? "Sigue el cambio de sentido sin pistas." : "Observa qué cambia con el conector."
+    : lessonCode === "1.2"
     ? current?.step === 1 ? "Recuerda la acción central." : current?.role === "transfer" ? "Forma una idea completa." : "Encuentra las palabras que van juntas."
     : current?.role === "probe" ? "Encuentra la acción central." : current?.role === "guided" ? "Sigue quién hizo qué." : "Resuelve sin pistas.";
   return <div className="sheet-backdrop library-backdrop" onClick={onClose}><section className="profile-sheet library-sheet mission-sheet" role="dialog" aria-modal="true" aria-labelledby="mission-title" onClick={event => event.stopPropagation()}>
     <header className="mission-header">
       <button className="sheet-close" onClick={onClose} aria-label="Cerrar misión">×</button>
       <p className="eyebrow">BLOQUE 1 · LECCIÓN {lessonCode}</p>
-      <h2 id="mission-title">{lessonCode === "1.1" ? "Conserva la acción central" : "Une palabras que van juntas"}</h2>
+      <h2 id="mission-title">{lessonCode === "1.1" ? "Conserva la acción central" : lessonCode === "1.2" ? "Une palabras que van juntas" : "Sigue el giro de los conectores"}</h2>
       {current && state?.status !== "completed" && <div className="mission-progress">{current.role === "probe" ? "Explora" : current.role === "guided" ? "Practica" : "Aplica"} · {current.step} de 6</div>}
     </header>
     <div className="mission-body">

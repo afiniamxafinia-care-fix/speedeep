@@ -4,7 +4,7 @@ export async function POST(request: Request) {
   try {
     const token = await requireAccessToken();
     const { articleId } = await request.json();
-    const result = await supabaseFetch("/rest/v1/rpc/begin_practice", token, {
+    const result = await supabaseFetch("/rest/v1/rpc/begin_practice_v2", token, {
       method: "POST",
       body: JSON.stringify({ p_article_id: articleId }),
     });

@@ -9,10 +9,11 @@ import FlashNumbers from "@/app/components/FlashNumbers";
 
 type IconName = "home" | "route" | "arena" | "practice" | "profile" | "arrow" | "book" | "spark" | "heart" | "camera" | "close" | "target";
 type PracticeQuestion = { id: string; prompt: string; options: string[] };
-type PracticeData = { article: { id: string; title: string; body: string; word_count: number; estimated_minutes: number }; questions: PracticeQuestion[] };
+type PracticeData = { article: { id: string; slug: string; title: string; body: string; word_count: number; estimated_minutes: number }; questions: PracticeQuestion[] };
 type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; latestReadingPpm: number | null; speedEvidenceCount: number; comprehension: number | null; practicesCount: number; readingsCount: number; trainingCount: number; flashRounds: number; diagnosticCompleted: boolean; lessonsCompleted: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; activeLessonCode: string | null; completedCount: number; lastTransferCorrect: number | null; sentenceActionState: "not_started" | "completed" | "demonstrated"; sentenceChunkState: "not_started" | "completed"; diagnosticStatus: "not_started" | "active" | "completed"; diagnosticStep: number | null }; lab: { numbersRank: number; numbersRounds: number } };
 type Anchor = { nextArticleId: string | null; baselinePpm: number | null; baselineComprehension: number | null; comparisonPpm: number | null; comparisonComprehension: number | null; deltaPpm: number | null };
-type DashboardWithAnchor = Dashboard & { anchor: Anchor };
+type Calibration = { nextArticleId: string | null; count: number; latestPpm: number | null; latestComprehension: number | null };
+type DashboardWithAnchor = Dashboard & { anchor: Anchor; calibration: Calibration };
 type Tab = "Home" | "Ruta" | "Arena" | "Prácticas" | "Perfil";
 const tabs: Tab[] = ["Home", "Ruta", "Arena", "Prácticas", "Perfil"];
 const clubs = [300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500];
@@ -58,12 +59,12 @@ export default function Home() {
   const [authError, setAuthError] = useState("");
   const ppm = dashboard?.stats.latestPpm ?? null;
   const comprehension = dashboard?.stats.comprehension ?? null;
-  const visiblePpm = ppm ?? dashboard?.anchor.comparisonPpm ?? dashboard?.anchor.baselinePpm ?? null;
-  const visibleComprehension = comprehension ?? dashboard?.anchor.comparisonComprehension ?? dashboard?.anchor.baselineComprehension ?? null;
+  const visiblePpm = ppm ?? dashboard?.calibration.latestPpm ?? dashboard?.anchor.baselinePpm ?? null;
+  const visibleComprehension = comprehension ?? dashboard?.calibration.latestComprehension ?? dashboard?.anchor.baselineComprehension ?? null;
   const displayName = dashboard?.user.name ?? user?.name ?? "Lector";
   const [activeTab, setActiveTab] = useState<Tab>("Home");
   const [profileOpen, setProfileOpen] = useState(false);
-  const [missionCode, setMissionCode] = useState<"1.1" | "1.2" | null>(null);
+  const [missionCode, setMissionCode] = useState<"1.1" | "1.2" | "1.3" | null>(null);
   const [diagnosticOpen, setDiagnosticOpen] = useState(false);
   const [flashOrigin, setFlashOrigin] = useState<"route" | "lab" | "diagnostic" | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string>();
@@ -330,14 +331,14 @@ export default function Home() {
         </section>
 
         <section className="metric-grid" aria-label="Tu progreso actual">
-          <article className="metric-card metric-ppm"><span className="metric-icon"><Icon name="target"/></span><span className="metric-label">Velocidad</span><strong>{visiblePpm === null ? "—" : Math.round(visiblePpm)}{visiblePpm !== null && <small> ppm</small>}</strong><small className="metric-note">{ppm !== null ? "mediana de lecturas válidas" : visiblePpm !== null ? `referencia inicial · ${Math.min(3, dashboard?.stats.speedEvidenceCount ?? 0)}/3 lecturas válidas` : "haz tu lectura inicial en Ruta"}</small></article>
+          <article className="metric-card metric-ppm"><span className="metric-icon"><Icon name="target"/></span><span className="metric-label">Velocidad</span><strong>{visiblePpm === null ? "—" : Math.round(visiblePpm)}{visiblePpm !== null && <small> ppm</small>}</strong><small className="metric-note">{ppm !== null ? "mediana de tres lecturas comparables" : dashboard?.calibration.latestPpm !== null && dashboard?.calibration.latestPpm !== undefined ? `nueva referencia · ${dashboard.calibration.count}/3 lecturas` : visiblePpm !== null ? "referencia anterior · sin cronómetro corregido" : "haz tu lectura en Ruta"}</small></article>
           <article className="metric-card metric-comprehension"><span className="metric-icon"><Icon name="spark"/></span><span className="metric-label">Comprensión</span><strong>{visibleComprehension === null ? "—" : visibleComprehension}{visibleComprehension !== null && <small>%</small>}</strong><small className="metric-note">{comprehension !== null ? "promedio de lecturas válidas" : visibleComprehension !== null ? "referencia inicial · provisional" : "con la lectura inicial"}</small></article>
           <article className="metric-card metric-streak"><span className="metric-icon streak-icon">✦</span><span className="metric-label">QSD</span><strong>—</strong><small className="metric-note">Requiere evidencia de seis habilidades</small></article>
         </section>
 
         {dashboard?.anchor.baselinePpm !== null && dashboard?.anchor.baselinePpm !== undefined && <section className="home-anchor" aria-label="Tu punto de partida">
-          <strong>Tu punto de partida: {dashboard.anchor.baselinePpm} ppm</strong>
-          <span>{dashboard.anchor.comparisonPpm !== null ? `Segunda lectura: ${dashboard.anchor.comparisonPpm} ppm (${dashboard.anchor.deltaPpm! > 0 ? "+" : ""}${dashboard.anchor.deltaPpm} ppm). Compara siempre junto con la comprensión.` : `Comprensión inicial: ${dashboard.anchor.baselineComprehension}%. Última lectura válida: ${dashboard.stats.latestReadingPpm ?? dashboard.anchor.baselinePpm} ppm. Lecturas elegibles: ${Math.min(3, dashboard.stats.speedEvidenceCount)}/3 para la mediana estable.`}</span>
+          <strong>Historial anterior: {dashboard.anchor.baselinePpm} ppm</strong>
+          <span>Lectura anterior: {dashboard.anchor.baselineComprehension}% de comprensión. {dashboard.calibration.count > 0 ? `Nueva medición: ${dashboard.calibration.latestPpm} ppm con ${dashboard.calibration.latestComprehension}% de comprensión (${dashboard.calibration.count}/3).` : "Haz tres lecturas nuevas con el cronómetro corregido para obtener una referencia comparable."}</span>
           <small>Referencia provisional; no acredita QSD ni un club.</small>
         </section>}
 
@@ -368,11 +369,11 @@ export default function Home() {
         </section>
 
         <section className="practice-nudge" aria-label="Continuar la ruta">
-          <span className="nudge-icon"><Icon name="route"/></span><div><strong>{dashboard?.curriculum.diagnosticStatus !== "completed" ? "Descubre tu punto de partida" : dashboard?.anchor.baselinePpm === null ? "Haz tu lectura de referencia" : dashboard?.curriculum.activeStep ? `Retoma tu misión ${dashboard.curriculum.activeLessonCode}` : dashboard?.curriculum.completedCount === 1 ? "Continúa con la lección 1.2" : "Tu próximo paso está en Ruta"}</strong><p>{dashboard?.curriculum.diagnosticStatus !== "completed" ? "Dos lecturas breves orientan tu plan." : dashboard?.anchor.baselinePpm === null ? "Conoce tu PPM y comprensión iniciales." : dashboard?.curriculum.activeStep ? `Quedaste en el paso ${dashboard.curriculum.activeStep} de 6.` : "Aplica una habilidad y compárala en otra lectura."}</p></div><button onClick={() => navigate("Ruta")} aria-label="Abrir ruta"><Icon name="arrow"/></button>
+          <span className="nudge-icon"><Icon name="route"/></span><div><strong>{dashboard?.curriculum.diagnosticStatus !== "completed" ? "Descubre tu punto de partida" : dashboard?.curriculum.activeStep ? `Retoma tu misión ${dashboard.curriculum.activeLessonCode}` : dashboard?.calibration.count !== undefined && dashboard.calibration.count < 3 ? "Completa tu medición de lectura" : dashboard?.curriculum.completedCount === 1 ? "Continúa con la lección 1.2" : dashboard?.curriculum.completedCount === 2 ? "Continúa con la lección 1.3" : "Tu próximo paso está en Ruta"}</strong><p>{dashboard?.curriculum.diagnosticStatus !== "completed" ? "Dos lecturas breves orientan tu plan." : dashboard?.curriculum.activeStep ? `Quedaste en el paso ${dashboard.curriculum.activeStep} de 6.` : dashboard?.calibration.count !== undefined && dashboard.calibration.count < 3 ? `${dashboard.calibration.count} de 3 lecturas comparables con el cronómetro corregido.` : "Aplica una habilidad y compárala en otra lectura."}</p></div><button onClick={() => navigate("Ruta")} aria-label="Abrir ruta"><Icon name="arrow"/></button>
         </section>
         </>}
 
-        {activeTab === "Ruta" && <Curriculum diagnosticStatus={dashboard?.curriculum.diagnosticStatus} diagnosticStep={dashboard?.curriculum.diagnosticStep} onDiagnostic={() => { if (!user) setAuthOpen(true); else setDiagnosticOpen(true); }} onFlash={() => { if (!user) setAuthOpen(true); else setFlashOrigin("route"); }} activeStep={dashboard?.curriculum.activeStep} activeLessonCode={dashboard?.curriculum.activeLessonCode} completedCount={dashboard?.curriculum.completedCount} sentenceActionState={dashboard?.curriculum.sentenceActionState} anchor={dashboard?.anchor} onReadAnchor={id => { void startPractice(id,"route"); }} onExploreReading={() => openLibrary("reading")} onStart={code => { if (!user) setAuthOpen(true); else setMissionCode(code); }}/>} 
+        {activeTab === "Ruta" && <Curriculum diagnosticStatus={dashboard?.curriculum.diagnosticStatus} diagnosticStep={dashboard?.curriculum.diagnosticStep} onDiagnostic={() => { if (!user) setAuthOpen(true); else setDiagnosticOpen(true); }} onFlash={() => { if (!user) setAuthOpen(true); else setFlashOrigin("route"); }} activeStep={dashboard?.curriculum.activeStep} activeLessonCode={dashboard?.curriculum.activeLessonCode} completedCount={dashboard?.curriculum.completedCount} sentenceActionState={dashboard?.curriculum.sentenceActionState} anchor={dashboard?.anchor} calibration={dashboard?.calibration} onReadAnchor={id => { void startPractice(id,"route"); }} onExploreReading={() => openLibrary("reading")} onStart={code => { if (!user) setAuthOpen(true); else setMissionCode(code); }}/>} 
 
         {activeTab === "Arena" && <section className="section-page" aria-labelledby="arena-heading">
           <p className="eyebrow">COMPETENCIA ENTRE LECTORES</p><h1 id="arena-heading">Arena</h1>
@@ -427,7 +428,7 @@ export default function Home() {
         {practiceResult ? <>
           <p className="practice-instructions">Compara siempre tu velocidad junto con la comprensión.</p>
           <div className="result-grid"><div><strong>{Math.round(practiceResult.rawActivePpm)}</strong><span>ppm en esta lectura</span></div><div><strong>{practiceResult.comprehensionScore}%</strong><span>comprensión</span></div><div><strong>{practiceResult.correctAnswers}/{practiceResult.totalQuestions}</strong><span>respuestas</span></div></div>
-          <p className="practice-instructions">{practiceResult.speedEligible ? `Esta lectura cuenta para tu velocidad general (${Math.min(3, dashboard?.stats.speedEvidenceCount ?? 0)}/3 lecturas válidas).` : "Este resultado queda en Prácticas; no se suma a la velocidad general."}</p>
+          <p className="practice-instructions">{practiceResult.speedEligible && practice.article.slug.startsWith("calibracion-") ? `Esta lectura cuenta para tu velocidad de referencia (${Math.min(3, dashboard?.stats.speedEvidenceCount ?? 0)}/3 lecturas comparables).` : practiceResult.speedEligible ? "Esta lectura queda guardada como evaluación; tu referencia actual usa tres textos comparables de Ruta." : "Este resultado queda en Prácticas; no se suma a la velocidad de referencia."}</p>
           {practiceOrigin === "route" && practiceResult.comprehensionScore < 70 && <p className="practice-instructions">Necesitamos más comprensión en un texto nuevo para usar este PPM como referencia.</p>}
           <button className="primary-cta practice-action" onClick={endPractice}>{practiceOrigin === "route" ? "Volver a mi ruta" : "Volver a Prácticas"} <Icon name="arrow"/></button>
         </> : !readingStarted ? <div className="reading-ready">

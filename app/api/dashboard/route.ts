@@ -6,15 +6,15 @@ export async function GET() {
     const authUser = await supabaseFetch("/auth/v1/user", token);
     const [profile, sessions, subscriptions, lessonAttempts, diagnosticAttempts, flashProfiles, trainingAttempts, anchorArticles] = await Promise.all([
       supabaseFetch(`/rest/v1/profiles?select=display_name,avatar_url&id=eq.${encodeURIComponent(authUser.id)}`, token),
-      supabaseFetch("/rest/v1/practice_sessions?select=id,article_id,article_content_version,completed_at,raw_active_ppm,adjusted_ppm,comprehension_score,validity_status,speed_eligible,reading_articles(assessment_use,word_count,slug,difficulty_level,text_type)&order=completed_at.desc&limit=1000", token),
+      supabaseFetch("/rest/v1/practice_sessions?select=id,article_id,article_content_version,completed_at,raw_active_ppm,adjusted_ppm,comprehension_score,validity_status,speed_eligible,timing_protocol_version,reading_articles(assessment_use,word_count,slug,difficulty_level,text_type)&order=completed_at.desc&limit=1000", token),
       supabaseFetch(`/rest/v1/subscriptions?select=status,trial_ends_at,current_period_ends_at,cancel_at_period_end&user_id=eq.${encodeURIComponent(authUser.id)}`, token),
-      supabaseFetch("/rest/v1/curriculum_attempts?select=lesson_code,status,current_step,variant,transfer_correct,started_at,completed_at&lesson_code=in.(1.1,1.2)&order=started_at.desc&limit=100", token),
+      supabaseFetch("/rest/v1/curriculum_attempts?select=lesson_code,status,current_step,variant,transfer_correct,started_at,completed_at&lesson_code=in.(1.1,1.2,1.3)&order=started_at.desc&limit=100", token),
       supabaseFetch("/rest/v1/diagnostic_attempts?select=next_item,finished_at,started_at&order=started_at.desc&limit=1", token),
       supabaseFetch("/rest/v1/flash_profiles?select=numbers_rank,rounds_completed&limit=1", token),
       supabaseFetch("/rest/v1/training_attempts?select=id&completed_at=not.is.null&limit=1000", token),
-      supabaseFetch("/rest/v1/reading_articles?select=id,slug,word_count,difficulty_level,text_type&slug=in.(la-biblioteca-que-escucho,dos-rutas-para-la-misma-visita)&is_published=eq.true", token),
+      supabaseFetch("/rest/v1/reading_articles?select=id,slug,word_count,difficulty_level,text_type&slug=in.(la-biblioteca-que-escucho,dos-rutas-para-la-misma-visita,calibracion-el-turno-del-taller,calibracion-el-mapa-del-huerto,calibracion-la-caja-de-los-libros,calibracion-la-nota-en-la-puerta,calibracion-la-mesa-compartida)&is_published=eq.true", token),
     ]);
-    type ReadingSession = { article_id: string; article_content_version: number; completed_at: string | null; validity_status: string; speed_eligible: boolean; comprehension_score: number; raw_active_ppm: number | null; reading_articles: { assessment_use: string; word_count: number; slug: string; difficulty_level: string; text_type: string } };
+    type ReadingSession = { article_id: string; article_content_version: number; completed_at: string | null; validity_status: string; speed_eligible: boolean; timing_protocol_version: string; comprehension_score: number; raw_active_ppm: number | null; reading_articles: { assessment_use: string; word_count: number; slug: string; difficulty_level: string; text_type: string } };
     // Select the first valid encounter with each version; repeats remain useful
     // training, but do not multiply evidence in the personal summary.
     const seen = new Set<string>();
@@ -29,7 +29,10 @@ export async function GET() {
     const comprehension = qualityWindow.length >= 3 && distinctArticles >= 2
       ? Math.round(qualityWindow.reduce((sum: number, item: { comprehension_score: number }) => sum + item.comprehension_score, 0) / qualityWindow.length)
       : null;
-    const speedWindow = firstReadings.filter((item: ReadingSession) => item.speed_eligible && item.reading_articles?.assessment_use === "evaluation" && item.reading_articles.word_count >= 300).slice(0, 5);
+    const calibrationOrder = ["calibracion-el-turno-del-taller", "calibracion-el-mapa-del-huerto", "calibracion-la-caja-de-los-libros", "calibracion-la-nota-en-la-puerta", "calibracion-la-mesa-compartida"];
+    const speedWindow = firstReadings.filter((item: ReadingSession) => item.timing_protocol_version === "on_demand_v2" && item.speed_eligible
+      && calibrationOrder.includes(item.reading_articles?.slug) && item.reading_articles?.difficulty_level === "beginner"
+      && item.reading_articles?.text_type === "narrative" && item.reading_articles.word_count >= 330 && item.reading_articles.word_count <= 390).slice(0, 5);
     const speedArticles = new Set(speedWindow.map((item: { article_id: string }) => item.article_id)).size;
     const speedValue = speedWindow.length >= 3 && speedArticles >= 2
       ? (() => {
@@ -47,6 +50,8 @@ export async function GET() {
     const attemptedAnchorIds = new Set((sessions ?? []).filter((item: ReadingSession) => item.completed_at)
       .map((item: ReadingSession) => item.article_id));
     const nextAnchor = anchorOrder.map(slug => anchorArticles.find((article: { slug: string }) => article.slug === slug))
+      .find((article: { id: string } | undefined) => article && !attemptedAnchorIds.has(article.id));
+    const nextCalibration = calibrationOrder.map(slug => anchorArticles.find((article: { slug: string }) => article.slug === slug))
       .find((article: { id: string } | undefined) => article && !attemptedAnchorIds.has(article.id));
     type LessonAttempt = { lesson_code: string; status: string; variant: string; transfer_correct: number | null; completed_at: string | null };
     const successful = (lessonAttempts as LessonAttempt[] ?? []).filter(item => item.lesson_code === "1.1" && item.status === "completed" && item.transfer_correct === 2 && item.completed_at);
@@ -78,6 +83,12 @@ export async function GET() {
         comparisonPpm: comparison ? Math.round(Number(comparison.raw_active_ppm)) : null,
         comparisonComprehension: comparison?.comprehension_score ?? null,
         deltaPpm: baseline && comparison ? Math.round(Number(comparison.raw_active_ppm) - Number(baseline.raw_active_ppm)) : null,
+      },
+      calibration: {
+        nextArticleId: nextCalibration?.id ?? null,
+        count: speedWindow.length,
+        latestPpm: speedWindow.length ? Math.round(Number(speedWindow[0].raw_active_ppm)) : null,
+        latestComprehension: speedWindow[0]?.comprehension_score ?? null,
       },
       stats: {
         latestPpm: speedValue,

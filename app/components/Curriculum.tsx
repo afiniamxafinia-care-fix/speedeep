@@ -13,7 +13,7 @@ const currentLevel = {
 };
 
 type Props = {
-  onStart: (code: "1.1" | "1.2") => void;
+  onStart: (code: "1.1" | "1.2" | "1.3") => void;
   onDiagnostic: () => void;
   onFlash: () => void;
   diagnosticStatus?: "not_started" | "active" | "completed";
@@ -23,11 +23,12 @@ type Props = {
   completedCount?: number;
   sentenceActionState?: "not_started" | "completed" | "demonstrated";
   anchor?: { nextArticleId: string | null; baselinePpm: number | null; baselineComprehension: number | null; comparisonPpm: number | null; comparisonComprehension: number | null; deltaPpm: number | null };
+  calibration?: { nextArticleId: string | null; count: number; latestPpm: number | null; latestComprehension: number | null };
   onReadAnchor: (articleId: string) => void;
   onExploreReading: () => void;
 };
 
-export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticStatus, diagnosticStep, activeStep, activeLessonCode, completedCount = 0, sentenceActionState, anchor, onReadAnchor, onExploreReading }: Props) {
+export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticStatus, diagnosticStep, activeStep, activeLessonCode, completedCount = 0, sentenceActionState, anchor, calibration, onReadAnchor, onExploreReading }: Props) {
   const practicedFirst = completedCount > 0;
   return <section className="section-page learning-route" aria-labelledby="route-heading">
     <p className="eyebrow">TU RUTA · {currentLevel.label.toUpperCase()}</p>
@@ -41,12 +42,13 @@ export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticS
     </div>
 
     {diagnosticStatus === "completed" && <div className="route-anchor">
-      <span className="eyebrow">TU PUNTO DE PARTIDA · LECTURA REAL</span>
-      <strong>{anchor?.baselinePpm === null || !anchor ? "Descubre tu velocidad inicial" : anchor.comparisonPpm === null ? `${anchor.baselinePpm} ppm · referencia provisional` : `De ${anchor.baselinePpm} a ${anchor.comparisonPpm} ppm`}</strong>
-      <p>{anchor?.baselinePpm === null || !anchor ? "Lee un texto nuevo y responde sobre lo que entendiste. Verás tu velocidad y comprensión al terminar." : anchor.comparisonPpm === null ? completedCount < 2 ? `Comprensión inicial: ${anchor.baselineComprehension}%. Aplica ahora la lección 1.2 y después compara tu lectura.` : `Comprensión inicial: ${anchor.baselineComprehension}%. Otra lectura mostrará cómo cambia tu desempeño.` : `Cambio observado: ${anchor.deltaPpm && anchor.deltaPpm > 0 ? "+" : ""}${anchor.deltaPpm} ppm, con ${anchor.comparisonComprehension}% de comprensión en el segundo texto.`}</p>
-      {anchor?.nextArticleId && (anchor.baselinePpm === null || completedCount >= 2) ? <button className="mission-launch" onClick={() => onReadAnchor(anchor.nextArticleId!)}>{anchor.baselinePpm === null ? "Hacer lectura inicial" : "Hacer lectura de comparación"}</button>
-        : !anchor?.nextArticleId && anchor?.baselinePpm === null ? <button className="mission-launch" onClick={onExploreReading}>Elegir otra lectura</button> : null}
-      <small>Este punto de referencia no otorga un club ni una calificación QSD.</small>
+      <span className="eyebrow">TU VELOCIDAD · LECTURAS COMPARABLES</span>
+      <strong>{calibration?.count ? `${calibration.count} de 3 lecturas · última ${calibration.latestPpm} ppm` : "Mide tu punto de partida"}</strong>
+      <p>{calibration?.count ? `Última comprensión: ${calibration.latestComprehension}%. Cada lectura se ve al terminar; la mediana aparecerá con tres resultados válidos.` : "Tres textos nuevos de dificultad y longitud similares. Lee cada uno cuando estés listo: el reloj empieza al tocar «Iniciar lectura»."}</p>
+      {calibration?.count !== undefined && calibration.count >= 3 ? <span className="route-calibration-done">✓ Ya tienes una velocidad de referencia estable en Home.</span>
+        : calibration?.nextArticleId ? <button className="mission-launch" onClick={() => onReadAnchor(calibration.nextArticleId!)}>Leer texto {Math.min(3,(calibration.count ?? 0)+1)} de 3</button>
+        : <button className="mission-launch" onClick={onExploreReading}>Elegir otra lectura</button>}
+      {anchor?.baselinePpm !== null && anchor?.baselinePpm !== undefined && <small>Tus lecturas anteriores ({anchor.baselinePpm} ppm de referencia inicial) permanecen en el historial; usaban el cronómetro anterior.</small>}
     </div>}
 
     <div className="route-level-title">
@@ -57,8 +59,8 @@ export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticS
 
     <ol className="route-steps" aria-label={`Lecciones de ${currentLevel.label}`}>
       {currentLevel.lessons.map((lesson, index) => {
-        const available = index <= 1 && (index === 0 || practicedFirst);
-        const code = `1.${index+1}` as "1.1" | "1.2";
+        const available = index <= 2 && (index === 0 || completedCount >= index);
+        const code = `1.${index+1}` as "1.1" | "1.2" | "1.3";
         const inProgress = activeLessonCode === code && activeStep;
         const completed = available && index < completedCount && !inProgress;
         const card = <li key={lesson.title} className={`route-step ${completed ? "route-step-completed" : available ? "route-step-current" : "route-step-locked"}`}>
@@ -66,7 +68,7 @@ export default function Curriculum({ onStart, onDiagnostic, onFlash, diagnosticS
           <div className="route-step-copy">
             <span>{currentLevel.label.toUpperCase()} · LECCIÓN {index + 1}</span>
             <strong>{lesson.title}</strong>
-            <small>{available ? inProgress ? `En curso · paso ${activeStep} de 6` : code === "1.1" && sentenceActionState === "demonstrated" ? "Habilidad demostrada con oraciones nuevas y recuperación posterior" : completed ? "Completada · seguirás aplicando esta habilidad" : lesson.description : index === 1 ? "Completa la lección 1 para abrirla" : "Esta lección está en preparación"}</small>
+            <small>{available ? inProgress ? `En curso · paso ${activeStep} de 6` : code === "1.1" && sentenceActionState === "demonstrated" ? "Habilidad demostrada con oraciones nuevas y recuperación posterior" : completed ? "Completada · seguirás aplicando esta habilidad" : lesson.description : index <= 2 ? `Completa la lección ${index} para abrirla` : "Esta lección está en preparación"}</small>
           </div>
           {available ? <button className={`route-step-action ${completed ? "route-step-action-optional" : ""}`} aria-label={`${inProgress ? "Retomar" : completed ? "Practicar de nuevo, opcional" : "Abrir"} lección ${index+1}: ${lesson.title}`} onClick={() => onStart(code)}>{inProgress ? "Seguir" : completed ? "Practicar" : "Empezar"}<span aria-hidden="true">→</span></button>
             : <span className="route-step-status">Próximamente</span>}

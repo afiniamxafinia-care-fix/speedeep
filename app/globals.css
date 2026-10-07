@@ -129,6 +129,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid rgba(
 .route-anchor>strong{display:block;margin:7px 0;font:800 19px/1.3 Manrope,sans-serif}
 .route-anchor p{margin:0 0 12px;color:#405b6e;font-size:12px;line-height:1.55}
 .route-anchor .mission-launch{margin:3px 0 10px}
+.route-calibration-done{display:block;margin:8px 0 12px;color:#267850;font-size:14px;font-weight:800}
 
 /* The lesson keeps its position when feedback appears. Only the exercise body scrolls. */
 .mission-sheet{height:85dvh;max-height:85dvh;display:flex;flex-direction:column;overflow:hidden;padding:0;background:#fff}

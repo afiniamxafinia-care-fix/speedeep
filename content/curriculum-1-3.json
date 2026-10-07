@@ -1,0 +1,326 @@
+[
+  {
+    "variant": "A",
+    "step": 1,
+    "role": "probe",
+    "sentence": "Tras revisar la lista, Alicia guardó los libros en el armario.",
+    "question": "¿Qué hizo Alicia?",
+    "options": [
+      "Revisó el armario",
+      "Guardó los libros",
+      "Compró libros"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "Revisó una lista antes; busca la acción principal.",
+      "Sí. Conservaste la acción central.",
+      "La oración no menciona una compra."
+    ]
+  },
+  {
+    "variant": "A",
+    "step": 2,
+    "role": "probe",
+    "sentence": "El aviso para los vecinos del edificio cambió de fecha.",
+    "question": "¿Qué palabras indican cuál aviso cambió?",
+    "options": [
+      "El aviso para los vecinos del edificio",
+      "cambió de fecha",
+      "los vecinos del edificio cambió"
+    ],
+    "correct_index": 0,
+    "feedback": [
+      "Exacto. Esas palabras nombran juntas el aviso.",
+      "Eso indica qué pasó, no cuál aviso era.",
+      "La expresión mezcla palabras de dos partes distintas."
+    ]
+  },
+  {
+    "variant": "A",
+    "step": 3,
+    "role": "guided",
+    "sentence": "El autobús llegó temprano, pero la puerta del museo seguía cerrada.",
+    "question": "¿Qué cambió después de «pero»?",
+    "options": [
+      "Pudieron entrar de inmediato",
+      "Llegar temprano no permitió entrar todavía",
+      "El autobús se averió"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "La puerta aún estaba cerrada.",
+      "Sí. «Pero» contrapone la llegada con la entrada.",
+      "No se habla de una avería."
+    ]
+  },
+  {
+    "variant": "A",
+    "step": 4,
+    "role": "guided",
+    "sentence": "Sara volvió al mostrador porque necesitaba confirmar el horario.",
+    "question": "¿Por qué volvió Sara?",
+    "options": [
+      "Para confirmar el horario",
+      "Porque el horario ya estaba confirmado",
+      "Para cerrar el mostrador"
+    ],
+    "correct_index": 0,
+    "feedback": [
+      "Correcto. «Porque» introduce el motivo.",
+      "La necesidad de confirmar seguía pendiente.",
+      "El texto no dice que cerrara el mostrador."
+    ]
+  },
+  {
+    "variant": "A",
+    "step": 5,
+    "role": "transfer",
+    "sentence": "Aunque la caja era pesada, Iván la llevó hasta la puerta.",
+    "question": "¿Qué ocurrió a pesar del peso?",
+    "options": [
+      "Dejó la caja en la mesa",
+      "La llevó hasta la puerta",
+      "Pidió que la devolvieran"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "El texto afirma que sí la llevó.",
+      "Sí. «Aunque» presenta un obstáculo que no impidió la acción.",
+      "No se menciona una devolución."
+    ]
+  },
+  {
+    "variant": "A",
+    "step": 6,
+    "role": "transfer",
+    "sentence": "El grupo eligió la ruta larga porque la corta tenía escaleras, pero salió más tarde de lo previsto.",
+    "question": "¿Qué pasó después de elegir la ruta?",
+    "options": [
+      "Salió más tarde",
+      "Usó las escaleras",
+      "Eligió la ruta corta"
+    ],
+    "correct_index": 0,
+    "feedback": [
+      "Exacto. «Pero» introduce el resultado inesperado.",
+      "La ruta elegida evitaba las escaleras de la corta.",
+      "Eligieron la larga."
+    ]
+  },
+  {
+    "variant": "B",
+    "step": 1,
+    "role": "probe",
+    "sentence": "A pesar del ruido, el equipo terminó el plano antes del mediodía.",
+    "question": "¿Qué hizo el equipo?",
+    "options": [
+      "Cambió el horario",
+      "Terminó el plano",
+      "Apagó las máquinas"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "No cambió el horario en la oración.",
+      "Bien. El ruido no cambia la acción central.",
+      "No se menciona apagar máquinas."
+    ]
+  },
+  {
+    "variant": "B",
+    "step": 2,
+    "role": "probe",
+    "sentence": "La llave de la sala de reuniones quedó sobre el escritorio.",
+    "question": "¿Qué palabras identifican la llave?",
+    "options": [
+      "quedó sobre el escritorio",
+      "de la sala quedó",
+      "La llave de la sala de reuniones"
+    ],
+    "correct_index": 2,
+    "feedback": [
+      "Eso indica dónde quedó.",
+      "Esa combinación corta una idea a la mitad.",
+      "Sí. El grupo completo identifica cuál llave."
+    ]
+  },
+  {
+    "variant": "B",
+    "step": 3,
+    "role": "guided",
+    "sentence": "La propuesta parecía sencilla, pero requería otra autorización.",
+    "question": "¿Qué añade «pero»?",
+    "options": [
+      "Ya estaba autorizada",
+      "No hacía falta autorización",
+      "Había una dificultad adicional"
+    ],
+    "correct_index": 2,
+    "feedback": [
+      "Aún requería autorización.",
+      "El texto dice lo contrario.",
+      "Correcto. La segunda parte limita la primera."
+    ]
+  },
+  {
+    "variant": "B",
+    "step": 4,
+    "role": "guided",
+    "sentence": "Nora cambió el cartel porque la fecha anterior era incorrecta.",
+    "question": "¿Qué explica «porque»?",
+    "options": [
+      "La razón del cambio",
+      "Una fecha futura confirmada",
+      "Quién escribió el cartel"
+    ],
+    "correct_index": 0,
+    "feedback": [
+      "Sí. La fecha incorrecta fue el motivo.",
+      "No se anuncia una fecha futura.",
+      "No se dice quién lo escribió."
+    ]
+  },
+  {
+    "variant": "B",
+    "step": 5,
+    "role": "transfer",
+    "sentence": "Aunque la reunión empezó tarde, el grupo alcanzó a revisar todas las preguntas.",
+    "question": "¿Qué se logró pese al retraso?",
+    "options": [
+      "Revisar todas las preguntas",
+      "Cancelar la reunión",
+      "Aplazar todas las preguntas"
+    ],
+    "correct_index": 0,
+    "feedback": [
+      "Exacto. El retraso no impidió la revisión.",
+      "La reunión sí ocurrió.",
+      "La oración dice que las revisaron."
+    ]
+  },
+  {
+    "variant": "B",
+    "step": 6,
+    "role": "transfer",
+    "sentence": "Marcos llevó una copia porque el archivo no abría, pero olvidó firmarla.",
+    "question": "¿Qué contratiempo quedó pendiente?",
+    "options": [
+      "No existía copia",
+      "La copia no estaba firmada",
+      "El archivo abrió sin problema"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "Marcos sí llevó una copia.",
+      "Correcto. «Pero» presenta lo que faltó después.",
+      "El archivo no abría."
+    ]
+  },
+  {
+    "variant": "C",
+    "step": 1,
+    "role": "probe",
+    "sentence": "Después de escuchar la explicación, Paula ajustó el horario del taller.",
+    "question": "¿Qué hizo Paula?",
+    "options": [
+      "Ajustó el horario",
+      "Canceló el taller",
+      "Repitió la explicación"
+    ],
+    "correct_index": 0,
+    "feedback": [
+      "Sí. Conservaste la acción actual.",
+      "Ajustar el horario no significa cancelar.",
+      "Escuchar ocurrió antes de ajustar."
+    ]
+  },
+  {
+    "variant": "C",
+    "step": 2,
+    "role": "probe",
+    "sentence": "Los materiales para el taller del sábado llegaron en una caja.",
+    "question": "¿Qué palabras identifican los materiales?",
+    "options": [
+      "llegaron en una caja",
+      "Los materiales para el taller del sábado",
+      "para el taller llegaron"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "Eso cuenta qué ocurrió después.",
+      "Bien. La expresión completa dice cuáles materiales.",
+      "Esa combinación no forma una unidad."
+    ]
+  },
+  {
+    "variant": "C",
+    "step": 3,
+    "role": "guided",
+    "sentence": "La tienda tenía los paquetes listos, pero faltaba confirmar la dirección.",
+    "question": "¿Qué impedía enviarlos todavía?",
+    "options": [
+      "Faltaban paquetes",
+      "Faltaba confirmar la dirección",
+      "La tienda ya los había enviado"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "Los paquetes estaban listos.",
+      "Sí. «Pero» señala lo que aún faltaba.",
+      "El envío no se menciona como realizado."
+    ]
+  },
+  {
+    "variant": "C",
+    "step": 4,
+    "role": "guided",
+    "sentence": "Elena consultó el mapa porque no conocía la entrada lateral.",
+    "question": "¿Para qué consultó el mapa?",
+    "options": [
+      "Para localizar la entrada lateral",
+      "Para cambiar el mapa",
+      "Porque ya había entrado"
+    ],
+    "correct_index": 0,
+    "feedback": [
+      "Exacto. «Porque» explica la necesidad de consultar.",
+      "No se dice que modificara el mapa.",
+      "Aún no conocía esa entrada."
+    ]
+  },
+  {
+    "variant": "C",
+    "step": 5,
+    "role": "transfer",
+    "sentence": "Aunque faltaba una silla, todas las personas encontraron un lugar para sentarse.",
+    "question": "¿Qué ocurrió a pesar de la silla faltante?",
+    "options": [
+      "Nadie pudo sentarse",
+      "Todas encontraron lugar",
+      "Se canceló la reunión"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "El texto dice que encontraron lugar.",
+      "Correcto. El obstáculo no impidió el resultado.",
+      "No se menciona ninguna cancelación."
+    ]
+  },
+  {
+    "variant": "C",
+    "step": 6,
+    "role": "transfer",
+    "sentence": "Inés pidió más tiempo porque el dato no estaba confirmado, pero entregó el resumen ese mismo día.",
+    "question": "¿Qué hizo pese a pedir más tiempo?",
+    "options": [
+      "Entregó el resumen ese día",
+      "Confirmó el dato faltante",
+      "Canceló el resumen"
+    ],
+    "correct_index": 0,
+    "feedback": [
+      "Sí. La segunda parte cambia lo esperado.",
+      "El dato seguía sin confirmarse.",
+      "La oración afirma que lo entregó."
+    ]
+  }
+]

@@ -13,12 +13,51 @@ type PracticeData = { article: { id: string; slug: string; title: string; body: 
 type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { latestPpm: number | null; latestReadingPpm: number | null; speedEvidenceCount: number; comprehension: number | null; practicesCount: number; readingsCount: number; trainingCount: number; flashRounds: number; diagnosticCompleted: boolean; lessonsCompleted: number; qsdState: string }; membership: { status: string; trial_ends_at: string; current_period_ends_at: string | null; cancel_at_period_end: boolean } | null; curriculum: { activeStep: number | null; activeLessonCode: string | null; completedCount: number; lessonTransferScores: Record<string, number>; lessonBestTransferScores: Record<string, number>; paragraphFirstCompleted: boolean; paragraphSecondCompleted: boolean; paragraphThirdCompleted: boolean; paragraphFourthCompleted: boolean; textCompleted: string[]; monitorCompleted: string[]; monitorIntegration: { attempted: boolean; passed: boolean; correct: number | null; missing: string[] }; textIntegration: { attempted: boolean; passed: boolean; correct: number | null; missing: string[] }; paragraphIntegration: { attempted: boolean; passed: boolean; correct: number | null; missing: string[] }; lastTransferCorrect: number | null; sentenceActionState: "not_started" | "completed" | "demonstrated"; sentenceChunkState: "not_started" | "completed"; integration: { attempted: boolean; passed: boolean; correct: number | null }; diagnosticStatus: "not_started" | "active" | "completed"; diagnosticStep: number | null }; lab: { numbersRank: number; numbersRounds: number } };
 type Anchor = { nextArticleId: string | null; baselinePpm: number | null; baselineComprehension: number | null; comparisonPpm: number | null; comparisonComprehension: number | null; deltaPpm: number | null };
 type Calibration = { nextArticleId: string | null; count: number; latestPpm: number | null; latestComprehension: number | null };
-type DashboardWithAnchor = Dashboard & { anchor: Anchor; calibration: Calibration };
+type DashboardWithAnchor = Dashboard & { anchor: Anchor; calibration: Calibration; activityTimes: string[] };
 type Tab = "Home" | "Ruta" | "Arena" | "Prácticas" | "Perfil";
 const tabs: Tab[] = ["Home", "Ruta", "Arena", "Prácticas", "Perfil"];
-const clubs = [300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500];
 
 const profileAvatars = ["avatar-aqua", "avatar-violet", "avatar-coral", "avatar-lime"];
+
+const routeMissions = [
+  { level: "1.1", codes: ["1.1", "1.2", "1.3", "1.4"], titles: ["Conservar la acción central", "Unir palabras que van juntas", "Seguir los conectores", "Resolver vocabulario"], closure: "1.C", closureTitle: "Comprende oraciones nuevas", passed: "integration" },
+  { level: "1.2", codes: ["2.1", "2.2", "2.3", "2.4"], titles: ["Di de qué trata el párrafo", "Separa idea y apoyo", "Conecta oraciones", "Conserva la esencia"], closure: "2.C", closureTitle: "Comprende párrafos nuevos", passed: "paragraphIntegration" },
+  { level: "1.3", codes: ["3.1", "3.2", "3.3", "3.4"], titles: ["Reconoce la estructura", "Conecta ideas entre párrafos", "Sigue un argumento", "Sintetiza un texto"], closure: "3.C", closureTitle: "Comprende textos nuevos", passed: "textIntegration" },
+  { level: "1.4", codes: ["4.1", "4.2", "4.3", "4.4"], titles: ["Detecta la pérdida de sentido", "Elige cómo reparar", "Vuelve con un propósito", "Recupera el foco"], closure: "4.C", closureTitle: "Recupera el sentido", passed: "monitorIntegration" },
+] as const;
+
+function localDay(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function weeklyActivity(times: string[], now: Date) {
+  const active = new Set(times.map(value => new Date(value)).filter(date => !Number.isNaN(date.getTime())).map(localDay));
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const start = new Date(today);
+  start.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(start); date.setDate(start.getDate() + index);
+    return { key: localDay(date), label: ["L", "M", "M", "J", "V", "S", "D"][index], active: active.has(localDay(date)), today: localDay(date) === localDay(today), future: date > today };
+  });
+  const cursor = new Date(today);
+  if (!active.has(localDay(cursor))) cursor.setDate(cursor.getDate() - 1);
+  let streak = 0;
+  while (active.has(localDay(cursor))) { streak++; cursor.setDate(cursor.getDate() - 1); }
+  return { days, streak, activeDays: active.size, todayDone: active.has(localDay(today)) };
+}
+
+function homeMission(dashboard: DashboardWithAnchor | null) {
+  if (!dashboard || dashboard.curriculum.diagnosticStatus !== "completed") return { kind: "diagnostic" as const, code: "", level: "1.1", title: "Descubre tu punto de partida", detail: "Dos lecturas breves orientarán tu entrenamiento.", label: "Diagnóstico inicial", action: dashboard?.curriculum.diagnosticStatus === "active" ? "Retomar diagnóstico" : "Comenzar ahora" };
+  const activeCode = dashboard.curriculum.activeLessonCode;
+  for (const group of routeMissions) {
+    for (let index = 0; index < group.codes.length; index++) {
+      const code = group.codes[index];
+      if (activeCode === code || (dashboard.curriculum.lessonBestTransferScores[code] ?? -1) < 1) return { kind: "lesson" as const, code, level: group.level, title: group.titles[index], detail: `Nivel ${group.level} · Lección ${index + 1}. Entrena una habilidad y aplícala en casos nuevos.`, label: `Lección ${index + 1}`, action: activeCode === code ? "Retomar lección" : dashboard.curriculum.lessonTransferScores[code] === 0 ? "Reforzar lección" : "Comenzar entrenamiento" };
+    }
+    if (activeCode === group.closure || !dashboard.curriculum[group.passed].passed) return { kind: "lesson" as const, code: group.closure, level: group.level, title: group.closureTitle, detail: `Nivel ${group.level} · Comprueba tus habilidades en casos nuevos.`, label: "Comprobación", action: activeCode === group.closure ? "Retomar comprobación" : "Comenzar comprobación" };
+  }
+  return { kind: "practice" as const, code: "", level: "1.4", title: "Sigue entrenando tu atención", detail: "Una práctica breve mantiene activa tu lectura.", label: "Práctica curiosa", action: "Elegir práctica" };
+}
 
 function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, React.ReactNode> = {
@@ -85,11 +124,20 @@ export default function Home() {
   const [savingPractice, setSavingPractice] = useState(false);
   const [practiceResult, setPracticeResult] = useState<{ rawActivePpm: number; comprehensionScore: number; correctAnswers: number; totalQuestions: number; speedEligible: boolean } | null>(null);
 
-  const milestonePpm = visiblePpm;
-  const milestone = clubs.find(value => milestonePpm === null || milestonePpm < value) ?? "+1500";
-  const previousMilestone = typeof milestone === "number" ? (clubs[clubs.indexOf(milestone) - 1] ?? 0) : 1500;
-  const milestoneProgress = milestonePpm === null ? 0 : Math.min(100, Math.max(0, ((milestonePpm - previousMilestone) / ((typeof milestone === "number" ? milestone : 1500) - previousMilestone || 1)) * 100));
-  const milestoneDistance = milestonePpm === null ? milestone : typeof milestone === "number" ? Math.max(0, milestone - milestonePpm) : 0;
+  const mission = homeMission(dashboard);
+  const activity = weeklyActivity(dashboard?.activityTimes ?? [], new Date());
+  const levelGroup = routeMissions.find(group => group.level === mission.level) ?? routeMissions[0];
+  const levelLessons = levelGroup.codes.filter(code => (dashboard?.curriculum.lessonBestTransferScores[code] ?? -1) >= 1).length;
+  const curiousKind: PracticeKind = (dashboard?.stats.trainingCount ?? 0) % 2 === 0 ? "find_data" : "sequence";
+
+  const startHomeMission = () => {
+    if (!user) { setAuthOpen(true); return; }
+    if (mission.kind === "diagnostic") setDiagnosticOpen(true);
+    else if (mission.kind === "lesson") setMissionCode(mission.code as NonNullable<typeof missionCode>);
+    else openLibrary("find_data");
+  };
+
+  const clubSpeedProgress = ppm === null ? 0 : Math.min(100, Math.round(ppm / 300 * 100));
 
   useEffect(() => {
     const syncTab = () => {
@@ -302,78 +350,58 @@ export default function Home() {
             <span className="brand-mark"><i/><i/><i/></span><span>spee<span>deep</span></span>
           </button>
           <div className="header-actions">
-            <button className="live-pill" onClick={() => navigate("Arena")} aria-label="Ir a Arena">Arena</button>
+            <span className="header-streak" aria-label={`Racha de ${activity.streak} días`}>✦ {activity.streak} {activity.streak === 1 ? "día" : "días"}</span>
             <button className="profile-shortcut" onClick={() => navigate("Perfil")} aria-label="Abrir perfil"><UserAvatar photo={profilePhoto} initials={displayName.slice(0, 1).toUpperCase()} variant={avatar}/></button>
           </div>
         </header>
 
         {activeTab === "Home" && <>
         <section className="welcome-section">
-          <p className="eyebrow">TU ESPACIO DE LECTURA</p>
-          <h1>Hola, {displayName.split(" ")[0]}</h1>
-          <p className="welcome-copy">Hoy puedes leer con más enfoque.</p>
+          <p className="eyebrow">MI ESPACIO DE LECTURA</p>
+          <h1>¡Hola, {displayName.split(" ")[0]}! <span aria-hidden="true">👋</span></h1>
+          <p className="welcome-copy">Un pequeño entrenamiento, un gran avance.</p>
         </section>
 
-        <section className="today-card" id="practica" aria-labelledby="today-title">
-          <div className="today-copy">
-            <span className="today-kicker"><span className="sparkle">✦</span> TU SIGUIENTE PASO</span>
-            <h2 id="today-title">Continúa tu ruta</h2>
-            <p>Aprende a comprender y usar lo que lees, paso a paso.</p>
-          </div>
-          <div className="book-art" aria-hidden="true">
-            <span className="speed-line line-one"/><span className="speed-line line-two"/><span className="speed-line line-three"/>
-            <svg viewBox="0 0 220 140" fill="none">
-              <path d="M18 51c28-13 54-12 91 5v60c-35-16-61-18-91-4V51Z" fill="#F8FCFF"/>
-              <path d="M202 51c-28-13-54-12-93 5v60c37-16 63-18 93-4V51Z" fill="#D9F4F8"/>
-              <path d="M109 56v60M31 65c20-7 42-5 62 3M31 78c20-6 42-4 62 4M31 91c20-6 42-3 62 5M189 65c-20-7-42-5-62 3M189 78c-20-6-42-4-62 4M189 91c-20-6-42-3-62 5" stroke="#76B6C9" strokeWidth="3" strokeLinecap="round"/>
-              <path d="m163 28 20-12m-5 29 25-4" stroke="#42E1E1" strokeWidth="3" strokeLinecap="round"/>
-              <path d="m182 10 2 7 7 2-7 2-2 7-2-7-7-2 7-2 2-7Z" fill="#C4EC60"/>
-            </svg>
-          </div>
-          <button className="primary-cta" onClick={() => navigate("Ruta")}>Ver mi ruta <Icon name="arrow"/></button>
+        <section className="daily-mission" aria-labelledby="daily-title">
+          <div className="daily-mission-top"><span>TU MISIÓN DE HOY</span><span aria-hidden="true">✦</span></div>
+          <h2 id="daily-title">{mission.title}</h2>
+          <p>{mission.detail}</p>
+          <div className="daily-mission-meta"><span>◷ {mission.kind === "diagnostic" ? "5–7 minutos" : "5 minutos"}</span><span>▣ {mission.label}</span></div>
+          <button className="primary-cta" onClick={startHomeMission}>{mission.action} <Icon name="arrow"/></button>
         </section>
 
-        <section className="metric-grid" aria-label="Tu progreso actual">
-          <article className="metric-card metric-ppm"><span className="metric-icon"><Icon name="target"/></span><span className="metric-label">Velocidad</span><strong>{visiblePpm === null ? "—" : Math.round(visiblePpm)}{visiblePpm !== null && <small> ppm</small>}</strong><small className="metric-note">{ppm !== null ? "mediana de tres lecturas comparables" : dashboard?.calibration.latestPpm !== null && dashboard?.calibration.latestPpm !== undefined ? `nueva referencia · ${dashboard.calibration.count}/3 lecturas` : visiblePpm !== null ? "referencia anterior · sin cronómetro corregido" : "haz tu lectura en Ruta"}</small></article>
-          <article className="metric-card metric-comprehension"><span className="metric-icon"><Icon name="spark"/></span><span className="metric-label">Comprensión</span><strong>{visibleComprehension === null ? "—" : visibleComprehension}{visibleComprehension !== null && <small>%</small>}</strong><small className="metric-note">{comprehension !== null ? "promedio de lecturas válidas" : visibleComprehension !== null ? "referencia inicial · provisional" : "con la lectura inicial"}</small></article>
-          <article className="metric-card metric-streak"><span className="metric-icon streak-icon">✦</span><span className="metric-label">QSD</span><strong>—</strong><small className="metric-note">Requiere evidencia de seis habilidades</small></article>
+        <section className="daily-overview" aria-label="Tu avance">
+          <div><strong>{mission.level}</strong><span>Nivel actual</span></div>
+          <div><strong>{levelLessons}/4</strong><span>Lecciones</span></div>
+          <div><strong>{activity.days.filter(day => day.active).length}</strong><span>Días esta semana</span></div>
         </section>
 
-        {dashboard?.anchor.baselinePpm !== null && dashboard?.anchor.baselinePpm !== undefined && <section className="home-anchor" aria-label="Tu punto de partida">
-          <strong>Historial anterior: {dashboard.anchor.baselinePpm} ppm</strong>
-          <span>Lectura anterior: {dashboard.anchor.baselineComprehension}% de comprensión. {dashboard.calibration.count > 0 ? `Nueva medición: ${dashboard.calibration.latestPpm} ppm con ${dashboard.calibration.latestComprehension}% de comprensión (${dashboard.calibration.count}/3).` : "Haz tres lecturas nuevas con el cronómetro corregido para obtener una referencia comparable."}</span>
-          <small>Referencia provisional; no acredita QSD ni un club.</small>
-        </section>}
-
-        <section className="activity-summary" aria-label="Actividad registrada">
-          <div><p className="eyebrow">TU ACTIVIDAD</p><h2>Lo que ya hiciste cuenta</h2></div>
-          <div className="activity-items">
-            <span><strong>{dashboard?.stats.diagnosticCompleted ? "✓" : "—"}</strong> Diagnóstico</span>
-            <span><strong>{dashboard?.stats.lessonsCompleted ?? 0}</strong> lecciones</span>
-            <span><strong>{dashboard?.stats.flashRounds ?? 0}</strong> rondas de cifras</span>
-            <span><strong>{dashboard?.stats.readingsCount ?? 0}</strong> lecturas</span>
-            <span><strong>{dashboard?.stats.trainingCount ?? 0}</strong> ejercicios</span>
-          </div>
-          {dashboard?.curriculum.sentenceActionState === "completed" && <p className="activity-skill">1.1 completada · comprobarás la habilidad con oraciones nuevas en otra sesión.</p>}
-          {dashboard?.curriculum.sentenceActionState === "demonstrated" && <p className="activity-skill">✓ Acción central demostrada en distintas sesiones.</p>}
-          <small>El laboratorio registra tus rondas; QSD y clubes requieren evaluaciones de lectura comparables.</small>
+        <section className="week-progress" aria-labelledby="week-progress-title">
+          <div className="home-section-heading"><h2 id="week-progress-title">Tu progreso</h2><button onClick={() => navigate("Ruta")}>Ver ruta <Icon name="arrow"/></button></div>
+          <p>{activity.todayDone ? "Hoy ya entrenaste. Puedes seguir con la siguiente misión." : activity.streak > 0 ? "Retoma cuando puedas; tu constancia cuenta." : activity.activeDays > 0 ? "Qué gusto tenerte de vuelta. Retoma a tu ritmo." : "Tu primera práctica comenzará a llenar esta semana."}</p>
+          <div className="week-days">{activity.days.map(day => <div key={day.key} className="week-day"><span>{day.label}</span><b className={`${day.active ? "is-active" : ""} ${day.today ? "is-today" : ""}`} aria-label={`${day.key}: ${day.active ? "actividad completada" : day.future ? "día futuro" : "sin actividad"}`}>{day.active ? "✓" : ""}</b></div>)}</div>
+          <small>{activity.streak > 0 ? `${activity.streak} ${activity.streak === 1 ? "día seguido" : "días seguidos"} · la racha cuenta prácticas terminadas, no velocidad` : "Cada día con una actividad terminada cuenta."}</small>
         </section>
 
-        <section className="milestone-card" id="ruta" aria-labelledby="milestone-title">
-          <div className="milestone-art" aria-hidden="true"><span className="orbit orbit-one"/><span className="orbit orbit-two"/><span className="milestone-spark">✦</span><Icon name="book"/></div>
-          <div className="milestone-content">
-            <p className="eyebrow">TU PRÓXIMO HITO</p>
-            <h2 id="milestone-title">{milestonePpm === null ? <>Tu primer hito: <strong>300 ppm</strong></> : <>Vas acercándote a los <strong>{milestone} ppm</strong></>}</h2>
-            <p className="milestone-club">{milestonePpm === null ? "Haz una lectura para ver tu punto de partida" : ppm === null ? "Avance provisional · faltan lecturas comparables para certificar el club" : `Referencia hacia ${milestone} ppm · club aún sin certificar`}</p>
-            <div className="progress-track" role="progressbar" aria-label={`Avance hacia ${milestone} ppm`} aria-valuenow={Math.round(milestoneProgress)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${milestoneProgress}%` }}/></div>
-            <div className="milestone-foot"><span>{milestonePpm === null ? "El primer objetivo es 300 ppm con comprensión" : milestoneDistance ? `Diferencia: ${Math.round(Number(milestoneDistance))} ppm` : "Sigue leyendo con comprensión"}</span><strong>{milestonePpm === null ? "—" : `${Math.round(milestonePpm)} / ${milestone} ppm`}</strong></div>
-          </div>
-          <div className="milestone-glow" aria-hidden="true"/>
+        <button className="curious-home" onClick={() => openLibrary(curiousKind)}>
+          <span className="curious-home-icon" aria-hidden="true">✦</span>
+          <span><small>LABORATORIO DE LECTURA</small><strong>{curiousKind === "find_data" ? "Busca el dato escondido" : "Ordena la historia"}</strong><em>{curiousKind === "find_data" ? "Atención y búsqueda" : "Secuencias"} · reto breve</em></span>
+          <Icon name="arrow"/>
+        </button>
+
+        <section className="home-evidence" aria-labelledby="evidence-title">
+          <div className="home-section-heading"><h2 id="evidence-title">Tus mediciones</h2><button onClick={() => navigate("Ruta")}>Cómo se miden <Icon name="arrow"/></button></div>
+          <div className="home-evidence-grid"><div><span>Velocidad</span><strong>{ppm !== null ? `${Math.round(ppm)} ppm` : "Pendiente de medir"}</strong><small>{ppm !== null ? "Mediana de lecturas comparables" : dashboard?.calibration.count ? `${dashboard.calibration.count}/3 lecturas comparables` : "Empieza con tu diagnóstico"}</small></div><div><span>Comprensión</span><strong>{comprehension !== null ? `${comprehension}%` : "Pendiente de medir"}</strong><small>{comprehension !== null ? "Promedio de lecturas válidas" : "Se estima con varias lecturas"}</small></div></div>
+          {(visiblePpm !== null && ppm === null || visibleComprehension !== null && comprehension === null) && <small className="evidence-history">Tus resultados anteriores permanecen en el historial; la nueva referencia requiere lecturas comparables.</small>}
         </section>
 
-        <section className="practice-nudge" aria-label="Continuar la ruta">
-          <span className="nudge-icon"><Icon name="route"/></span><div><strong>{dashboard?.curriculum.diagnosticStatus !== "completed" ? "Descubre tu punto de partida" : dashboard?.curriculum.activeStep ? `Retoma tu misión ${dashboard.curriculum.activeLessonCode}` : dashboard?.calibration.count !== undefined && dashboard.calibration.count < 3 ? "Completa tu medición de lectura" : dashboard?.curriculum.completedCount === 1 ? "Continúa con la lección 1.2" : dashboard?.curriculum.completedCount === 2 ? "Continúa con la lección 1.3" : "Tu próximo paso está en Ruta"}</strong><p>{dashboard?.curriculum.diagnosticStatus !== "completed" ? "Dos lecturas breves orientan tu plan." : dashboard?.curriculum.activeStep ? `Quedaste en el paso ${dashboard.curriculum.activeStep} de 6.` : dashboard?.calibration.count !== undefined && dashboard.calibration.count < 3 ? `${dashboard.calibration.count} de 3 lecturas comparables con el cronómetro corregido.` : "Aplica una habilidad y compárala en otra lectura."}</p></div><button onClick={() => navigate("Ruta")} aria-label="Abrir ruta"><Icon name="arrow"/></button>
+        <section className="club-compact" aria-labelledby="club-title">
+          <div><span className="eyebrow">OBJETIVO DE LECTURA</span><h2 id="club-title">Club 300</h2><p>{ppm === null ? "Primero reúne tres lecturas comparables." : comprehension === null ? "Falta evidencia de comprensión para valorar este hito." : `Referencia ${Math.round(ppm)} ppm · comprensión ${comprehension}%.`}</p></div>
+          <div className="club-compact-track" role="progressbar" aria-label="Referencia de velocidad hacia 300 ppm; no certifica el club" aria-valuenow={clubSpeedProgress} aria-valuemin={0} aria-valuemax={100}><span style={{width: `${clubSpeedProgress}%`}}/></div>
+          <small>El club requiere velocidad, comprensión y evidencia comparable.</small>
         </section>
+
+        <details className="home-history"><summary>Ver toda mi actividad</summary><div><span>Diagnóstico: {dashboard?.stats.diagnosticCompleted ? "completado" : "pendiente"}</span><span>{dashboard?.stats.lessonsCompleted ?? 0} lecciones terminadas</span><span>{dashboard?.stats.readingsCount ?? 0} lecturas</span><span>{dashboard?.stats.trainingCount ?? 0} ejercicios</span><span>{dashboard?.stats.flashRounds ?? 0} rondas de cifras</span></div></details>
         </>}
 
         {activeTab === "Ruta" && <Curriculum diagnosticStatus={dashboard?.curriculum.diagnosticStatus} diagnosticStep={dashboard?.curriculum.diagnosticStep} onDiagnostic={() => { if (!user) setAuthOpen(true); else setDiagnosticOpen(true); }} onFlash={() => { if (!user) setAuthOpen(true); else setFlashOrigin("route"); }} activeStep={dashboard?.curriculum.activeStep} activeLessonCode={dashboard?.curriculum.activeLessonCode} completedCount={dashboard?.curriculum.completedCount} lessonTransferScores={dashboard?.curriculum.lessonTransferScores} lessonBestTransferScores={dashboard?.curriculum.lessonBestTransferScores} sentenceActionState={dashboard?.curriculum.sentenceActionState} integration={dashboard?.curriculum.integration} paragraphFirstCompleted={dashboard?.curriculum.paragraphFirstCompleted} paragraphSecondCompleted={dashboard?.curriculum.paragraphSecondCompleted} paragraphThirdCompleted={dashboard?.curriculum.paragraphThirdCompleted} paragraphFourthCompleted={dashboard?.curriculum.paragraphFourthCompleted} paragraphIntegration={dashboard?.curriculum.paragraphIntegration} textCompleted={dashboard?.curriculum.textCompleted} textIntegration={dashboard?.curriculum.textIntegration} monitorCompleted={dashboard?.curriculum.monitorCompleted} monitorIntegration={dashboard?.curriculum.monitorIntegration} curiousRotation={(dashboard?.stats.trainingCount ?? 0) + (dashboard?.stats.flashRounds ?? 0)} onCuriousPractice={(kind, level, after) => openLibrary(kind, { level, after })} anchor={dashboard?.anchor} calibration={dashboard?.calibration} onReadAnchor={id => { void startPractice(id,"route"); }} onExploreReading={() => openLibrary("reading")} onStart={code => { if (!user) setAuthOpen(true); else setMissionCode(code); }}/>} 

@@ -4,7 +4,7 @@ export async function GET() {
   try {
     const token = await requireAccessToken();
     const authUser = await supabaseFetch("/auth/v1/user", token);
-    const [profile, sessions, subscriptions, lessonAttempts, lessonResponses, diagnosticAttempts, flashProfiles, trainingAttempts, anchorArticles] = await Promise.all([
+    const [profile, sessions, subscriptions, lessonAttempts, lessonResponses, diagnosticAttempts, flashProfiles, trainingAttempts, flashRounds, anchorArticles] = await Promise.all([
       supabaseFetch(`/rest/v1/profiles?select=display_name,avatar_url&id=eq.${encodeURIComponent(authUser.id)}`, token),
       supabaseFetch("/rest/v1/practice_sessions?select=id,article_id,article_content_version,completed_at,raw_active_ppm,adjusted_ppm,comprehension_score,validity_status,speed_eligible,timing_protocol_version,reading_articles(assessment_use,word_count,slug,difficulty_level,text_type)&order=completed_at.desc&limit=1000", token),
       supabaseFetch(`/rest/v1/subscriptions?select=status,trial_ends_at,current_period_ends_at,cancel_at_period_end&user_id=eq.${encodeURIComponent(authUser.id)}`, token),
@@ -12,7 +12,8 @@ export async function GET() {
       supabaseFetch("/rest/v1/curriculum_responses?select=attempt_id,first_correct,skill_code&order=answered_at.desc&limit=1000", token),
       supabaseFetch("/rest/v1/diagnostic_attempts?select=next_item,finished_at,started_at&order=started_at.desc&limit=1", token),
       supabaseFetch("/rest/v1/flash_profiles?select=numbers_rank,rounds_completed&limit=1", token),
-      supabaseFetch("/rest/v1/training_attempts?select=id&completed_at=not.is.null&limit=1000", token),
+      supabaseFetch("/rest/v1/training_attempts?select=id,completed_at&completed_at=not.is.null&order=completed_at.desc&limit=1000", token),
+      supabaseFetch("/rest/v1/flash_rounds?select=completed_at&completed_at=not.is.null&order=completed_at.desc&limit=1000", token),
       supabaseFetch("/rest/v1/reading_articles?select=id,slug,word_count,difficulty_level,text_type&slug=in.(la-biblioteca-que-escucho,dos-rutas-para-la-misma-visita,calibracion-el-turno-del-taller,calibracion-el-mapa-del-huerto,calibracion-la-caja-de-los-libros,calibracion-la-nota-en-la-puerta,calibracion-la-mesa-compartida)&is_published=eq.true", token),
     ]);
     type ReadingSession = { article_id: string; article_content_version: number; completed_at: string | null; validity_status: string; speed_eligible: boolean; timing_protocol_version: string; comprehension_score: number; raw_active_ppm: number | null; reading_articles: { assessment_use: string; word_count: number; slug: string; difficulty_level: string; text_type: string } };
@@ -98,9 +99,18 @@ export async function GET() {
       const missing = monitorSkills.filter(skill => !correct.some(item => item.skill_code === skill));
       return { correct: correct.length, passed: responses.length === 6 && correct.length >= 5 && missing.length === 0, missing };
     });
+    // Send completion timestamps so the client can place each day in the reader's local timezone.
+    const activityTimes = [
+      ...(sessions ?? []).map((item: { completed_at: string | null }) => item.completed_at),
+      ...(lessonAttempts as LessonAttempt[] ?? []).map(item => item.completed_at),
+      ...(trainingAttempts ?? []).map((item: { completed_at: string | null }) => item.completed_at),
+      ...(flashRounds ?? []).map((item: { completed_at: string | null }) => item.completed_at),
+      diagnosticAttempts?.[0]?.finished_at ?? null,
+    ].filter((value): value is string => typeof value === "string");
     return Response.json({
       user: { name: profile?.[0]?.display_name ?? authUser.user_metadata?.name ?? "Lector", avatarUrl: profile?.[0]?.avatar_url ?? null },
       membership: subscriptions?.[0] ?? null,
+      activityTimes,
       curriculum: {
         diagnosticStatus: diagnosticAttempts?.[0]?.finished_at ? "completed" : diagnosticAttempts?.[0] ? "active" : "not_started",
         diagnosticStep: diagnosticAttempts?.[0]?.finished_at ? null : diagnosticAttempts?.[0]?.next_item ?? null,

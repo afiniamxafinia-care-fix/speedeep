@@ -1,0 +1,322 @@
+[
+  {
+    "level": "1.1",
+    "slug": "integracion-1-1-la-nota-del-mercado",
+    "title": "La nota del mercado",
+    "body": "El mercado del barrio abrió más tarde de lo habitual aquel jueves. Camila llegó con una lista corta: tomates, arroz y una libreta para su hermano. En la entrada encontró a Bruno, quien sostenía una caja de vasos vacíos. Él no vendía alimentos; ayudaba a preparar una mesa donde las familias podían dejar recipientes limpios para reutilizarlos. Camila leyó el aviso pegado a la caja y continuó hacia los puestos.\n\nLa vendedora de verduras había cambiado de lugar. Una lona azul cubría ahora el pasillo donde solía instalarse, porque el techo necesitaba reparación. Camila preguntó a un trabajador y él señaló el patio del fondo. Allí vio los tomates, pero también una fila frente a una mesa de cobro. La vendedora explicó que esa fila era para entregar pedidos encargados por teléfono. Quien solo quería comprar podía acercarse al otro lado del puesto.\n\nCamila eligió los tomates y después buscó el arroz. Un cartel decía: «El arroz integral está en la mesa interior; el blanco se encuentra junto a las especias». Camila quería arroz blanco, así que siguió la segunda indicación. No encontró paquetes junto a las especias, aunque sí vio un recipiente con una nota nueva. La nota decía que los paquetes se habían agotado esa mañana y llegarían al día siguiente. La palabra «agotado» le bastó para entender que no podía llevar ese producto en ese momento; no necesitó preguntar por el precio.\n\nAntes de salir, pasó por la papelería del mercado. Había libretas grandes con tapas rígidas y otras pequeñas de hojas lisas. Su hermano necesitaba una libreta que cupiera en el bolsillo del uniforme. Camila escogió una pequeña, pagó y volvió hacia la entrada. Bruno ya había llenado media caja con vasos reutilizables. Camila no había conseguido todo lo que buscaba, pero sabía qué faltaba y cuándo podía volver. Le dejó a Bruno un vaso limpio que llevaba en su bolsa y anotó en su lista: «Arroz blanco, mañana». Esa nota le recordaría regresar sin repetir toda la búsqueda.",
+    "questions": [
+      [
+        "¿Qué hizo Camila al enterarse de que la vendedora cambió de lugar?",
+        [
+          "Volvió a casa.",
+          "Preguntó y fue al patio del fondo.",
+          "Esperó junto a la lona azul."
+        ],
+        1,
+        "literal",
+        "comprehension",
+        "Acción central"
+      ],
+      [
+        "En «la vendedora explicó que esa fila era para entregar pedidos», ¿qué parte indica el propósito de la fila?",
+        [
+          "La vendedora explicó.",
+          "Esa fila.",
+          "Entregar pedidos encargados por teléfono."
+        ],
+        2,
+        "supporting_detail",
+        "comprehension",
+        "Agrupar palabras"
+      ],
+      [
+        "¿Por qué Camila se acercó al otro lado del puesto?",
+        [
+          "Porque solo quería comprar tomates.",
+          "Porque llevaba un pedido telefónico.",
+          "Porque el techo ya estaba reparado."
+        ],
+        0,
+        "inferential",
+        "comprehension",
+        "Conectores y relaciones"
+      ],
+      [
+        "¿Qué significa «agotado» según la nota del arroz?",
+        [
+          "Que costaba menos.",
+          "Que ya no quedaban paquetes esa mañana.",
+          "Que estaba en la mesa interior."
+        ],
+        1,
+        "literal",
+        "comprehension",
+        "Vocabulario por contexto"
+      ],
+      [
+        "¿Qué debía hacer Camila para comprar arroz blanco?",
+        [
+          "Pedir una libreta grande.",
+          "Esperar en la fila de encargos.",
+          "Volver al día siguiente."
+        ],
+        2,
+        "purpose_task",
+        "adaptation_to_purpose",
+        "Decidir si consultar"
+      ],
+      [
+        "¿Cuál fue la acción principal de Camila durante la visita?",
+        [
+          "Buscó los productos de su lista y ajustó lo que faltaba.",
+          "Organizó la mesa de recipientes.",
+          "Reparó el techo del pasillo."
+        ],
+        0,
+        "main_idea",
+        "idea_identification",
+        "Acción central"
+      ]
+    ]
+  },
+  {
+    "level": "1.2",
+    "slug": "integracion-1-2-el-aviso-de-la-biblioteca",
+    "title": "El aviso de la biblioteca",
+    "body": "La biblioteca de la colonia empezó a prestar juegos de mesa junto con los libros. Durante el primer mes, muchas familias preguntaban cómo llevarse uno a casa. El reglamento estaba colocado detrás del mostrador, pero desde la entrada apenas podía leerse. La encargada, Irene, anotó las preguntas repetidas: cuánto duraba el préstamo, qué hacer si faltaba una pieza y si era posible reservar un juego ocupado.\n\nIrene preparó un aviso breve para la puerta. Escribió que cada familia podía llevar un juego durante siete días y revisar las piezas con el personal antes de salir. También explicó que una reserva se hacía en el mostrador y que avisarían por mensaje cuando el juego estuviera disponible. No puso en el cartel una lista completa de juegos; esa lista cambiaba cada semana y podía consultarse dentro. El objetivo del aviso era aclarar los pasos comunes, no describir cada caja.\n\nEl sábado siguiente, una familia llegó con un juego al que le faltaba una ficha. Habían contado las piezas al salir y recordaban que entonces estaba completo. Irene revisó la hoja de préstamo, anotó la falta y buscó una ficha de repuesto. La familia no tuvo que adivinar qué hacer ni esperar a que llegara otra persona. Otro visitante quiso reservar el mismo juego, pero Irene le explicó que primero debían dejar la caja lista para el siguiente préstamo. Él eligió anotar su nombre y esperar el mensaje.\n\nAl terminar la semana, Irene comparó las dudas recibidas antes y después del cartel. Seguían preguntando cuáles juegos eran adecuados para niños pequeños, porque esa información variaba según el juego. En cambio, casi nadie preguntaba por la duración ni por las reservas. Irene decidió mantener el aviso y preparar una guía separada con recomendaciones de edades. El cartel no resolvía todas las conversaciones; liberaba tiempo para las preguntas que sí necesitaban una respuesta personal. Así, la biblioteca pudo ampliar el servicio sin convertir el mostrador en una fila de instrucciones repetidas para cada familia nueva.",
+    "questions": [
+      [
+        "¿Cuál es la idea principal del texto?",
+        [
+          "La biblioteca dejó de prestar libros.",
+          "Un aviso aclaró reglas comunes y dejó espacio para preguntas específicas.",
+          "Todos los juegos podían prestarse sin revisión."
+        ],
+        1,
+        "main_idea",
+        "idea_identification",
+        "Idea principal"
+      ],
+      [
+        "¿Qué dato apoya que el aviso redujo dudas repetidas?",
+        [
+          "Casi nadie volvió a preguntar por duración o reservas.",
+          "Una familia perdió una ficha.",
+          "La lista de juegos cambiaba cada semana."
+        ],
+        0,
+        "supporting_detail",
+        "comprehension",
+        "Idea y apoyo"
+      ],
+      [
+        "En «Él eligió anotar su nombre», ¿a quién se refiere «Él»?",
+        [
+          "A Irene.",
+          "Al visitante que quería reservar.",
+          "Al personal de la biblioteca."
+        ],
+        1,
+        "literal",
+        "comprehension",
+        "Referentes"
+      ],
+      [
+        "¿Qué resumen conserva lo esencial sin añadir un detalle secundario?",
+        [
+          "Irene escribió cada juego en la puerta y cerró el mostrador.",
+          "Una familia perdió una ficha de un juego.",
+          "La biblioteca comunicó reglas de préstamo y separó las recomendaciones variables."
+        ],
+        2,
+        "main_idea",
+        "idea_identification",
+        "Resumen"
+      ],
+      [
+        "¿Por qué la lista completa de juegos no estaba en el aviso?",
+        [
+          "Porque cambiaba con frecuencia.",
+          "Porque nadie la consultaba.",
+          "Porque estaba prohibido reservar."
+        ],
+        0,
+        "inferential",
+        "comprehension",
+        "Idea y apoyo"
+      ],
+      [
+        "¿Qué tema requería todavía una guía aparte?",
+        [
+          "El plazo de siete días.",
+          "Las recomendaciones de edades.",
+          "La ubicación del mostrador."
+        ],
+        1,
+        "purpose_task",
+        "adaptation_to_purpose",
+        "Resumen"
+      ]
+    ]
+  },
+  {
+    "level": "1.3",
+    "slug": "integracion-1-3-la-ruta-de-las-cajas",
+    "title": "La ruta de las cajas",
+    "body": "En una escuela, los grupos reunían materiales para un taller de ciencias. Cada salón debía colocar sus cajas en el patio antes del viernes. El lunes, Sara propuso llevarlas directamente al laboratorio, pero allí todavía estaban pintando las mesas. La directora pidió que usaran por unos días un almacén junto a la cancha. Sara pegó una etiqueta en cada caja para conservar el nombre del grupo y el tipo de material.\n\nEl miércoles empezó a llover. El techo del almacén no tenía goteras, aunque el camino hasta la puerta se llenó de lodo. Un maestro quiso mover las cajas a un corredor abierto, que quedaba más cerca del laboratorio. Sara señaló que los frascos de cartón podían dañarse con el agua que entraba de lado. Acordaron mantenerlos bajo techo y trasladar primero los materiales resistentes cuando el suelo se secara. Ninguno de los dos lugares era perfecto: el almacén protegía mejor, mientras el corredor acortaba el recorrido.\n\nEl jueves terminaron de pintar las mesas, pero la directora pidió esperar una noche más para que estuvieran completamente secas. Sara revisó el inventario y descubrió que una caja etiquetada como «imanes» contenía también reglas de plástico. Separó las reglas y corrigió la lista. El viernes por la mañana, dos estudiantes llevaron las cajas al laboratorio siguiendo el orden del inventario actualizado. Primero acomodaron los materiales frágiles en una mesa lateral y después llevaron los objetos resistentes a los armarios.\n\nCuando comenzó el taller, un grupo no encontraba sus reglas. Sara consultó la lista corregida y mostró el armario donde las habían guardado. No podía afirmar que las reglas se hubieran perdido durante la lluvia: nunca habían salido del almacén antes del viernes. Al final de la actividad, el maestro reconoció que el inventario había ahorrado tiempo. La directora propuso conservar el mismo método para el siguiente taller, pero pidió revisar las etiquetas frente al contenido antes de mover las cajas. La experiencia no demostró que el almacén fuera siempre la mejor opción; mostró que una decisión temporal y un registro preciso podían evitar confusiones.",
+    "questions": [
+      [
+        "¿Cuál fue el orden correcto?",
+        [
+          "Pintaron mesas, etiquetaron cajas, llovió, hicieron el inventario.",
+          "Etiquetaron cajas, llovió, corrigieron el inventario, llevaron cajas al laboratorio.",
+          "Llevaron cajas al laboratorio, llovió, corrigieron el inventario."
+        ],
+        1,
+        "literal",
+        "comprehension",
+        "Secuencia"
+      ],
+      [
+        "¿Por qué mantuvieron los frascos bajo techo durante la lluvia?",
+        [
+          "Porque el corredor recibía agua de lado.",
+          "Porque el laboratorio estaba cerrado todo el mes.",
+          "Porque las etiquetas no tenían nombres."
+        ],
+        0,
+        "inferential",
+        "comprehension",
+        "Causalidad"
+      ],
+      [
+        "¿Qué contraste entre almacén y corredor aparece en el texto?",
+        [
+          "Ambos estaban igual de lejos.",
+          "El corredor protegía más, pero era más lento.",
+          "El almacén protegía más y el corredor quedaba más cerca."
+        ],
+        2,
+        "supporting_detail",
+        "comprehension",
+        "Contraste"
+      ],
+      [
+        "¿Qué se puede concluir sobre las reglas perdidas?",
+        [
+          "Se dañaron con la lluvia.",
+          "Estaban guardadas según la lista corregida.",
+          "La directora las había retirado."
+        ],
+        1,
+        "inferential",
+        "comprehension",
+        "Inferencia"
+      ],
+      [
+        "¿Qué información cambió el jueves?",
+        [
+          "El contenido registrado de una caja.",
+          "La fecha de inicio de clases.",
+          "El estado del techo del almacén."
+        ],
+        0,
+        "literal",
+        "comprehension",
+        "Secuencia"
+      ],
+      [
+        "¿Cuál sería una decisión razonable para el siguiente taller?",
+        [
+          "Eliminar las etiquetas.",
+          "Dejar siempre las cajas en el corredor.",
+          "Comprobar etiquetas y contenido antes del traslado."
+        ],
+        2,
+        "purpose_task",
+        "adaptation_to_purpose",
+        "Inferencia"
+      ]
+    ]
+  },
+  {
+    "level": "1.4",
+    "slug": "integracion-1-4-la-lista-del-recorrido",
+    "title": "La lista del recorrido",
+    "body": "Una asociación organizó un recorrido a pie para conocer árboles del barrio. Paula preparó una hoja con cuatro paradas y anotó la hora de encuentro: sábado a las nueve de la mañana. El viernes recibió una versión impresa que decía «domingo a las nueve». En lugar de suponer que habían cambiado la fecha, revisó el mensaje enviado a las familias. El mensaje confirmaba el sábado. Llamó a quien imprimió las hojas, corrigieron el día y avisaron a los participantes.\n\nDurante el recorrido, el guía explicó que en la segunda parada había un árbol recién plantado. Su cartel decía que tenía ocho años de edad y que lo habían plantado el mes anterior. Paula notó que ambas frases podían ser ciertas: el árbol había crecido varios años en un vivero antes de llegar al barrio. No interrumpió la explicación. Más adelante, otro cartel afirmaba que un tronco caído todavía recibía agua por sus raíces, aunque las raíces habían sido retiradas el año anterior. Esta vez sí había una contradicción directa. Paula volvió al párrafo del cartel, localizó las dos frases y preguntó cuál de ellas debía corregirse.\n\nEn la tercera parada se separó un momento para ayudar a una niña a encontrar su botella. Al regresar, el grupo ya hablaba de las hojas de un árbol distinto. Paula no intentó adivinar todo lo que se había dicho. Recordó que la última idea que había escuchado trataba del agua almacenada en el tronco y preguntó cuál era la pregunta actual del grupo. El guía señaló una hoja ancha y explicó que estaban comparando sombra y pérdida de agua. Con esa orientación, Paula pudo seguir el resto de la explicación.\n\nAl terminar, guardó la hoja corregida y escribió dos notas para mejorar el próximo recorrido. La primera era comprobar fechas antes de imprimir; la segunda, revisar los carteles que mezclaran datos de distintas etapas de un árbol. No marcó como error la edad del ejemplar recién plantado, porque una fecha de traslado no indicaba la fecha de nacimiento. Paula había releído solo cuando encontró una ruptura real y había retomado la conversación desde una idea conocida.",
+    "questions": [
+      [
+        "¿Qué dato sí mostraba una contradicción directa?",
+        [
+          "Un árbol de ocho años plantado el mes anterior.",
+          "Un tronco con raíces retiradas que supuestamente seguían absorbiendo agua.",
+          "Una hoja ancha que daba sombra."
+        ],
+        1,
+        "inferential",
+        "comprehension",
+        "Detectar ruptura"
+      ],
+      [
+        "¿Cómo comprobó Paula el día correcto del recorrido?",
+        [
+          "Revisó el mensaje enviado a las familias.",
+          "Supuso que el impreso era más reciente.",
+          "Preguntó a la niña de la botella."
+        ],
+        0,
+        "purpose_task",
+        "adaptation_to_purpose",
+        "Elegir reparación"
+      ],
+      [
+        "¿Qué parte del cartel necesitaba volver a leer ante la contradicción?",
+        [
+          "La lista de paradas.",
+          "La edad del árbol nuevo.",
+          "Las dos frases sobre el tronco y sus raíces."
+        ],
+        2,
+        "purpose_task",
+        "adaptation_to_purpose",
+        "Relectura dirigida"
+      ],
+      [
+        "¿Cómo retomó Paula la conversación tras la pausa?",
+        [
+          "Inventó el tema que faltaba.",
+          "Recordó la última idea y preguntó por el objetivo actual.",
+          "Volvió al inicio del recorrido."
+        ],
+        1,
+        "recall",
+        "retention",
+        "Recuperar el foco"
+      ],
+      [
+        "¿Por qué la edad del árbol recién plantado no era necesariamente un error?",
+        [
+          "Había crecido antes en un vivero.",
+          "El cartel no tenía fecha.",
+          "El guía había cancelado esa parada."
+        ],
+        0,
+        "inferential",
+        "comprehension",
+        "Detectar ruptura"
+      ],
+      [
+        "¿Qué sugerencia serviría para el próximo recorrido?",
+        [
+          "Eliminar todas las fechas.",
+          "Leer de nuevo cada cartel completo aunque no haya dudas.",
+          "Comprobar fechas e identificar carteles con datos de etapas distintas."
+        ],
+        2,
+        "main_idea",
+        "idea_identification",
+        "Elegir reparación"
+      ]
+    ]
+  }
+]

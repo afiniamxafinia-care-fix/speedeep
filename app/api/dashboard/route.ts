@@ -14,7 +14,7 @@ export async function GET() {
       supabaseFetch("/rest/v1/flash_profiles?select=numbers_rank,rounds_completed&limit=1", token),
       supabaseFetch("/rest/v1/training_attempts?select=id,completed_at&completed_at=not.is.null&order=completed_at.desc&limit=1000", token),
       supabaseFetch("/rest/v1/flash_rounds?select=completed_at&completed_at=not.is.null&order=completed_at.desc&limit=1000", token),
-      supabaseFetch("/rest/v1/reading_articles?select=id,slug,word_count,difficulty_level,text_type&slug=in.(la-biblioteca-que-escucho,dos-rutas-para-la-misma-visita,calibracion-el-turno-del-taller,calibracion-el-mapa-del-huerto,calibracion-la-caja-de-los-libros,calibracion-la-nota-en-la-puerta,calibracion-la-mesa-compartida)&is_published=eq.true", token),
+      supabaseFetch("/rest/v1/reading_articles?select=id,slug,word_count,difficulty_level,text_type&slug=in.(la-biblioteca-que-escucho,dos-rutas-para-la-misma-visita,calibracion-el-turno-del-taller,calibracion-el-mapa-del-huerto,calibracion-la-caja-de-los-libros,calibracion-la-nota-en-la-puerta,calibracion-la-mesa-compartida,integracion-1-1-la-nota-del-mercado,integracion-1-2-el-aviso-de-la-biblioteca,integracion-1-3-la-ruta-de-las-cajas,integracion-1-4-la-lista-del-recorrido)&is_published=eq.true", token),
     ]);
     type ReadingSession = { article_id: string; article_content_version: number; completed_at: string | null; validity_status: string; speed_eligible: boolean; timing_protocol_version: string; comprehension_score: number; raw_active_ppm: number | null; reading_articles: { assessment_use: string; word_count: number; slug: string; difficulty_level: string; text_type: string } };
     // Select the first valid encounter with each version; repeats remain useful
@@ -32,9 +32,21 @@ export async function GET() {
       ? Math.round(qualityWindow.reduce((sum: number, item: { comprehension_score: number }) => sum + item.comprehension_score, 0) / qualityWindow.length)
       : null;
     const calibrationOrder = ["calibracion-el-turno-del-taller", "calibracion-el-mapa-del-huerto", "calibracion-la-caja-de-los-libros", "calibracion-la-nota-en-la-puerta", "calibracion-la-mesa-compartida"];
+    const integrativeSlugs: Record<string, string> = { "1.1": "integracion-1-1-la-nota-del-mercado", "1.2": "integracion-1-2-el-aviso-de-la-biblioteca", "1.3": "integracion-1-3-la-ruta-de-las-cajas", "1.4": "integracion-1-4-la-lista-del-recorrido" };
+    const comparableSlugs = [...calibrationOrder, ...Object.values(integrativeSlugs)];
     const speedWindow = firstReadings.filter((item: ReadingSession) => item.timing_protocol_version === "on_demand_v2" && item.speed_eligible
+      && comparableSlugs.includes(item.reading_articles?.slug) && item.reading_articles?.difficulty_level === "beginner"
+      && item.reading_articles?.text_type === "narrative" && item.reading_articles.word_count >= 330 && item.reading_articles.word_count <= 390).slice(0, 5);
+    const calibrationWindow = firstReadings.filter((item: ReadingSession) => item.timing_protocol_version === "on_demand_v2" && item.speed_eligible
       && calibrationOrder.includes(item.reading_articles?.slug) && item.reading_articles?.difficulty_level === "beginner"
       && item.reading_articles?.text_type === "narrative" && item.reading_articles.word_count >= 330 && item.reading_articles.word_count <= 390).slice(0, 5);
+    const integratedReadings = Object.fromEntries(Object.entries(integrativeSlugs).map(([level, slug]) => {
+      const article = anchorArticles.find((item: { slug: string }) => item.slug === slug);
+      const latest = (sessions as ReadingSession[] ?? []).find(item => item.reading_articles?.slug === slug);
+      return [level, { articleId: article?.id ?? null, ppm: latest?.raw_active_ppm ?? null,
+        comprehension: latest?.comprehension_score ?? null, eligible: latest?.speed_eligible ?? false,
+        completedAt: latest?.completed_at ?? null }];
+    }));
     const speedArticles = new Set(speedWindow.map((item: { article_id: string }) => item.article_id)).size;
     const speedValue = speedWindow.length >= 3 && speedArticles >= 2
       ? (() => {
@@ -147,10 +159,11 @@ export async function GET() {
       },
       calibration: {
         nextArticleId: nextCalibration?.id ?? null,
-        count: speedWindow.length,
-        latestPpm: speedWindow.length ? Math.round(Number(speedWindow[0].raw_active_ppm)) : null,
-        latestComprehension: speedWindow[0]?.comprehension_score ?? null,
+        count: calibrationWindow.length,
+        latestPpm: calibrationWindow.length ? Math.round(Number(calibrationWindow[0].raw_active_ppm)) : null,
+        latestComprehension: calibrationWindow[0]?.comprehension_score ?? null,
       },
+      integratedReadings,
       stats: {
         latestPpm: speedValue,
         latestReadingPpm: speedWindow[0]?.raw_active_ppm === null || !speedWindow.length ? null : Math.round(Number(speedWindow[0].raw_active_ppm)),

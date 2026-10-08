@@ -60,6 +60,14 @@ export async function GET() {
       && earlier.completed_at && later.completed_at && new Date(later.completed_at).getTime() - new Date(earlier.completed_at).getTime() >= 24 * 60 * 60 * 1000));
     const completedLessons = new Set((lessonAttempts as LessonAttempt[] ?? []).filter(item => item.status === "completed" && !item.lesson_code.endsWith(".C")).map(item => item.lesson_code));
     const activeLesson = (lessonAttempts ?? []).find((item: { status: string }) => item.status === "active");
+    const lessonTransferScores: Record<string, number> = {};
+    const lessonBestTransferScores: Record<string, number> = {};
+    for (const item of lessonAttempts as LessonAttempt[] ?? []) {
+      if (item.status === "completed" && !item.lesson_code.endsWith(".C") && item.transfer_correct !== null) {
+        if (lessonTransferScores[item.lesson_code] === undefined) lessonTransferScores[item.lesson_code] = item.transfer_correct;
+        lessonBestTransferScores[item.lesson_code] = Math.max(lessonBestTransferScores[item.lesson_code] ?? 0, item.transfer_correct);
+      }
+    }
     const closureAttempts = (lessonAttempts as LessonAttempt[] ?? []).filter(item => item.lesson_code === "1.C" && item.status === "completed");
     const requiredClosureSkills = ["sentence_action", "sentence_chunk", "sentence_connector", "vocabulary_context", "vocabulary_decision"];
     const closureScores = closureAttempts.map(attempt => {
@@ -99,6 +107,8 @@ export async function GET() {
         activeStep: activeLesson?.current_step ?? null,
         activeLessonCode: activeLesson?.lesson_code ?? null,
         completedCount: ["1.1", "1.2", "1.3", "1.4"].filter(code => completedLessons.has(code)).length,
+        lessonTransferScores,
+        lessonBestTransferScores,
         paragraphFirstCompleted: completedLessons.has("2.1"),
         paragraphSecondCompleted: completedLessons.has("2.2"),
         paragraphThirdCompleted: completedLessons.has("2.3"),

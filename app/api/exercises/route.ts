@@ -5,8 +5,10 @@ export async function POST(request: Request) {
     const token = await requireAccessToken();
     const body = await request.json();
     if (body.action === "begin" && typeof body.exerciseId === "string") {
+      const origin = body.origin ?? "lab";
+      if (origin !== "lab" && origin !== "route" || origin === "route" && (!['1.1','1.2','1.3','1.4'].includes(body.routeLevel) || ![1,3].includes(body.routeAfter))) throw new ApiError("El origen de práctica no es válido.", 422);
       const data = await supabaseFetch("/rest/v1/rpc/begin_training", token, {
-        method: "POST", body: JSON.stringify({ p_exercise_id: body.exerciseId }),
+        method: "POST", body: JSON.stringify({ p_exercise_id: body.exerciseId, p_origin: origin, p_route_level: origin === "route" ? body.routeLevel : null, p_route_after: origin === "route" ? body.routeAfter : null }),
       });
       return Response.json(data);
     }

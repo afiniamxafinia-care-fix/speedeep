@@ -16,8 +16,8 @@ type Exercise = { id: string; title: string; kind: PracticeKind; instructions: s
 type Result = { score: number; expectedIndices: number[]; explanation: string };
 type Placement = { readingRange: "beginner" | "intermediate" | "advanced"; recommendedKind: string; reason: string; source: "diagnostic" | "recent_readings" };
 
-export default function PracticeLibrary({ initialKind = "reading", onClose, onRead }: {
-  initialKind?: PracticeKind; onClose: () => void; onRead: (id: string) => void;
+export default function PracticeLibrary({ initialKind = "reading", origin = "lab", routeLevel, routeAfter, onClose, onRead }: {
+  initialKind?: PracticeKind; origin?: "route" | "lab"; routeLevel?: string; routeAfter?: 1 | 3; onClose: () => void; onRead: (id: string) => void;
 }) {
   const [kind, setKind] = useState(initialKind);
   const [catalog, setCatalog] = useState<{ articles: Article[]; exercises: TrainingCard[]; placement: Placement | null } | null>(null);
@@ -40,7 +40,7 @@ export default function PracticeLibrary({ initialKind = "reading", onClose, onRe
   async function begin(id: string) {
     setBusy(true); setError("");
     try {
-      const response = await fetch("/api/exercises", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "begin", exerciseId: id }) });
+      const response = await fetch("/api/exercises", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "begin", exerciseId: id, origin, routeLevel: routeLevel ?? null, routeAfter: routeAfter ?? null }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "No se pudo abrir el ejercicio.");
       setActive(data); setSelected([]); setResult(null);

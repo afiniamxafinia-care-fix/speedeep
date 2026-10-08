@@ -11,9 +11,9 @@ export const practiceModes: { kind: PracticeKind; title: string; description: st
   { kind: "relevance", title: "Lo relevante", description: "Elige lo que sí importa", mark: "✓" },
 ];
 type Article = { id: string; title: string; category: string; word_count: number; difficulty_level: string; estimated_minutes: number };
-type TrainingCard = { id: string; title: string; kind: PracticeKind; estimated_minutes: number; lastScore: number | null };
+type TrainingCard = { id: string; title: string; kind: PracticeKind; estimated_minutes: number; lastScore: number | null; lastDurationSeconds: number | null; lastCompletedAt: string | null; scoreChange: number | null };
 type Exercise = { id: string; title: string; kind: PracticeKind; instructions: string; context: string; items: string[] };
-type Result = { score: number; expectedIndices: number[]; explanation: string };
+type Result = { score: number; expectedIndices: number[]; explanation: string; durationSeconds: number | null; scoreChange: number | null };
 type Placement = { readingRange: "beginner" | "intermediate" | "advanced"; recommendedKind: string; reason: string; source: "diagnostic" | "recent_readings" };
 
 export default function PracticeLibrary({ initialKind = "reading", origin = "lab", routeLevel, routeAfter, onClose, onRead }: {
@@ -64,8 +64,10 @@ export default function PracticeLibrary({ initialKind = "reading", origin = "lab
       const response = await fetch("/api/exercises", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit", attemptId: active.attemptId, selectedIndices: selected }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "No se pudo guardar el resultado.");
-      setResult(data.result);
-      setCatalog(current => current ? { ...current, exercises: current.exercises.map(e => e.id === active.exercise.id ? { ...e, lastScore: data.result.score } : e) } : current);
+      const previous = catalog?.exercises.find(e => e.id === active.exercise.id)?.lastScore ?? null;
+      const scoreChange = previous === null ? null : data.result.score - previous;
+      setResult({ ...data.result, scoreChange });
+      setCatalog(current => current ? { ...current, exercises: current.exercises.map(e => e.id === active.exercise.id ? { ...e, lastScore: data.result.score, lastDurationSeconds: data.result.durationSeconds, lastCompletedAt: new Date().toISOString(), scoreChange } : e) } : current);
     } catch (err) { setError(err instanceof Error ? err.message : "No se pudo guardar el resultado."); }
     finally { setBusy(false); }
   }
@@ -86,7 +88,7 @@ export default function PracticeLibrary({ initialKind = "reading", origin = "lab
           {catalog.placement.recommendedKind !== kind && practiceModes.some(m => m.kind === catalog.placement?.recommendedKind) && <button className="mission-launch" onClick={() => setKind(catalog.placement!.recommendedKind as PracticeKind)}>Ver práctica sugerida</button>}</div>}
         <div className="mode-tabs" role="tablist" aria-label="Tipos de práctica">{practiceModes.map(m => <button key={m.kind} role="tab" aria-selected={kind === m.kind} className={kind === m.kind ? "selected" : ""} onClick={() => setKind(m.kind)}>{m.title}</button>)}</div>
         {!catalog && !error && <p className="practice-instructions" role="status">Cargando tus prácticas…</p>}
-        <div className="catalog-list">{kind === "reading" ? catalog?.articles.slice().sort((a,b) => Number(b.difficulty_level === catalog.placement?.readingRange) - Number(a.difficulty_level === catalog.placement?.readingRange)).map(a => <button key={a.id} className="catalog-card" onClick={() => onRead(a.id)}><span className="catalog-mark">↗</span><span><strong>{a.title}</strong><small>{a.category} · {a.word_count} palabras · {a.estimated_minutes} min</small><small>{({ beginner: "Inicial", intermediate: "Intermedio", advanced: "Avanzado" } as Record<string, string>)[a.difficulty_level] ?? "Práctica breve"}{a.difficulty_level === catalog.placement?.readingRange ? " · sugerida" : ""}</small></span><b aria-hidden="true">→</b></button>) : catalog?.exercises.filter(e => e.kind === kind).map(e => <button key={e.id} className="catalog-card" disabled={busy} onClick={() => begin(e.id)}><span className={`catalog-mark mark-${e.kind}`}>{mode.mark}</span><span><strong>{e.title}</strong><small>{mode.description} · {e.estimated_minutes} min</small>{e.lastScore !== null && <small className="saved-score">Último resultado: {e.lastScore}/100</small>}</span><b aria-hidden="true">→</b></button>)}</div>
+        <div className="catalog-list">{kind === "reading" ? catalog?.articles.slice().sort((a,b) => Number(b.difficulty_level === catalog.placement?.readingRange) - Number(a.difficulty_level === catalog.placement?.readingRange)).map(a => <button key={a.id} className="catalog-card" onClick={() => onRead(a.id)}><span className="catalog-mark">↗</span><span><strong>{a.title}</strong><small>{a.category} · {a.word_count} palabras · {a.estimated_minutes} min</small><small>{({ beginner: "Inicial", intermediate: "Intermedio", advanced: "Avanzado" } as Record<string, string>)[a.difficulty_level] ?? "Práctica breve"}{a.difficulty_level === catalog.placement?.readingRange ? " · sugerida" : ""}</small></span><b aria-hidden="true">→</b></button>) : catalog?.exercises.filter(e => e.kind === kind).sort((a, b) => (a.lastCompletedAt ?? "").localeCompare(b.lastCompletedAt ?? "")).map(e => <button key={e.id} className="catalog-card" disabled={busy} onClick={() => begin(e.id)}><span className={`catalog-mark mark-${e.kind}`}>{mode.mark}</span><span><strong>{e.title}</strong><small>{mode.description} · {e.estimated_minutes} min</small>{e.lastScore !== null && <small className="saved-score">Precisión {e.lastScore}%{e.lastDurationSeconds !== null ? ` · ${Math.floor(e.lastDurationSeconds / 60)}:${String(e.lastDurationSeconds % 60).padStart(2, "0")}` : ""}{e.scoreChange !== null ? ` · ${e.scoreChange > 0 ? "+" : ""}${e.scoreChange} puntos` : ""}</small>}</span><b aria-hidden="true">→</b></button>)}</div>
       </> : <>
         {!result && <>
           <p className="practice-instructions">{exercise.instructions}</p>
@@ -96,7 +98,7 @@ export default function PracticeLibrary({ initialKind = "reading", origin = "lab
           <button className="primary-cta practice-action" disabled={busy || !complete} onClick={submit}>{busy ? "Guardando…" : "Comprobar y guardar"}</button>
         </>}
         {result && <>
-          <div className="training-result"><strong>{result.score}<small>/100</small></strong><span>Resultado de este ejercicio</span></div>
+          <div className="training-result"><strong>{result.score}<small>/100</small></strong><span>Precisión en este ejercicio{result.durationSeconds !== null ? ` · ${Math.floor(result.durationSeconds / 60)}:${String(result.durationSeconds % 60).padStart(2, "0")}` : ""}{result.scoreChange !== null ? ` · ${result.scoreChange > 0 ? "+" : ""}${result.scoreChange} puntos frente al anterior` : ""}</span></div>
           <p className="answer-feedback">{result.explanation}</p>
           <p className="form-label">{exercise.kind === "sequence" ? "Orden correcto" : "Respuesta esperada"}</p>
           <ol className="solution-list">{result.expectedIndices.map(index => <li key={index}>{exercise.items[index]}</li>)}</ol>

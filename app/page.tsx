@@ -14,6 +14,7 @@ type Dashboard = { user: { name: string; avatarUrl: string | null }; stats: { la
 type Anchor = { nextArticleId: string | null; baselinePpm: number | null; baselineComprehension: number | null; comparisonPpm: number | null; comparisonComprehension: number | null; deltaPpm: number | null };
 type Calibration = { nextArticleId: string | null; count: number; latestPpm: number | null; latestComprehension: number | null };
 type DashboardWithAnchor = Dashboard & { anchor: Anchor; calibration: Calibration; activityTimes: string[] };
+type PracticeCatalog = { exercises: { id: string; title: string; kind: PracticeKind; estimated_minutes: number; lastScore: number | null; lastDurationSeconds: number | null; lastCompletedAt: string | null; scoreChange: number | null }[]; recentResult: { title: string; kind: PracticeKind; lastScore: number; lastDurationSeconds: number | null; lastCompletedAt: string; scoreChange: number | null } | null };
 type Tab = "Home" | "Ruta" | "Arena" | "Prácticas" | "Perfil";
 const tabs: Tab[] = ["Home", "Ruta", "Arena", "Prácticas", "Perfil"];
 
@@ -59,6 +60,21 @@ function homeMission(dashboard: DashboardWithAnchor | null) {
   return { kind: "practice" as const, code: "", level: "1.4", title: "Sigue entrenando tu atención", detail: "Una práctica breve mantiene activa tu lectura.", label: "Práctica curiosa", action: "Elegir práctica" };
 }
 
+function labRecommendation(dashboard: DashboardWithAnchor | null, catalog: PracticeCatalog | null): { kind: PracticeKind | "flash"; title: string; reason: string } {
+  if (!dashboard?.stats.diagnosticCompleted || !dashboard.lab.numbersRounds) return { kind: "flash", title: "Cifras fugaces", reason: "Ocho destellos para activar tu atención." };
+  const scores = dashboard.curriculum.lessonTransferScores;
+  const missing = dashboard.curriculum.paragraphIntegration.missing;
+  let kind: PracticeKind | null = null;
+  if (missing.includes("paragraph_main_idea") || scores["2.1"] === 0 || scores["1.1"] === 0) kind = "main_idea";
+  else if (missing.includes("paragraph_support") || scores["2.2"] === 0) kind = "relevance";
+  else if (missing.includes("paragraph_reference") || scores["2.3"] === 0) kind = "find_data";
+  else if (scores["1.3"] === 0) kind = "sequence";
+  const weakest = catalog?.exercises.filter(e => e.lastScore !== null && e.lastScore < 70).sort((a,b) => (a.lastScore ?? 0) - (b.lastScore ?? 0))[0];
+  if (!kind && weakest) kind = weakest.kind;
+  if (!kind) kind = (["find_data", "sequence", "main_idea", "relevance"] as const)[dashboard.stats.trainingCount % 4];
+  return { kind, title: practiceModes.find(mode => mode.kind === kind)?.title ?? "Práctica breve", reason: weakest?.kind === kind && !missing.length ? "Puedes mejorar tu resultado anterior con otra variante." : "Un reto breve para entrenar esta habilidad." };
+}
+
 function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, React.ReactNode> = {
     home: <><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-7h6v7"/></>,
@@ -86,6 +102,7 @@ function UserAvatar({ photo, initials, variant = "avatar-aqua", className = "" }
 export default function Home() {
   const [dashboard, setDashboard] = useState<DashboardWithAnchor | null>(null);
   const [user, setUser] = useState<{ email: string; name: string } | null>(null);
+  const userEmail = user?.email;
   const [, setLoading] = useState(true);
   const [appError, setAppError] = useState("");
   const [authOpen, setAuthOpen] = useState(false);
@@ -111,6 +128,8 @@ export default function Home() {
   const [practiceOpen, setPracticeOpen] = useState(false);
   const [practiceOrigin, setPracticeOrigin] = useState<"route" | "lab">("lab");
   const [libraryKind, setLibraryKind] = useState<PracticeKind | null>(null);
+  const [practiceCatalog, setPracticeCatalog] = useState<PracticeCatalog | null>(null);
+  const [practiceCatalogError, setPracticeCatalogError] = useState("");
   const [libraryRoute, setLibraryRoute] = useState<{ level: "1.1" | "1.2" | "1.3" | "1.4"; after: 1 | 3 } | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
@@ -129,6 +148,7 @@ export default function Home() {
   const levelGroup = routeMissions.find(group => group.level === mission.level) ?? routeMissions[0];
   const levelLessons = levelGroup.codes.filter(code => (dashboard?.curriculum.lessonBestTransferScores[code] ?? -1) >= 1).length;
   const curiousKind: PracticeKind = (dashboard?.stats.trainingCount ?? 0) % 2 === 0 ? "find_data" : "sequence";
+  const recommendedLab = labRecommendation(dashboard, practiceCatalog);
 
   const startHomeMission = () => {
     if (!user) { setAuthOpen(true); return; }
@@ -154,6 +174,17 @@ export default function Home() {
     const timer = window.setInterval(() => { if (document.visibilityState === "visible") setSeconds((value) => value + 1); }, 1000);
     return () => window.clearInterval(timer);
   }, [running]);
+
+  useEffect(() => {
+    if (activeTab !== "Prácticas" || !userEmail || libraryKind) return;
+    const controller = new AbortController();
+    fetch("/api/catalog", { signal: controller.signal, cache: "no-store" }).then(async response => {
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "No se pudieron cargar tus prácticas.");
+      setPracticeCatalog(data); setPracticeCatalogError("");
+    }).catch(error => { if (!controller.signal.aborted) setPracticeCatalogError(error instanceof Error ? error.message : "No se pudieron cargar tus prácticas."); });
+    return () => controller.abort();
+  }, [activeTab, userEmail, libraryKind]);
 
   useEffect(() => {
     let cancelled = false;
@@ -358,29 +389,25 @@ export default function Home() {
         {activeTab === "Home" && <>
         <section className="welcome-section">
           <p className="eyebrow">MI ESPACIO DE LECTURA</p>
-          <h1>¡Hola, {displayName.split(" ")[0]}! <span aria-hidden="true">👋</span></h1>
-          <p className="welcome-copy">Un pequeño entrenamiento, un gran avance.</p>
+          <h1>{activity.todayDone ? "¡Ya comenzaste!" : "¡Vamos por 5 minutos!"} <span aria-hidden="true">{activity.todayDone ? "✦" : "👋"}</span></h1>
+          <p className="welcome-copy">{activity.todayDone ? `${displayName.split(" ")[0]}, tu siguiente reto te espera.` : `${displayName.split(" ")[0]}, un pequeño entrenamiento puede abrir un gran avance.`}</p>
         </section>
 
         <section className="daily-mission" aria-labelledby="daily-title">
-          <div className="daily-mission-top"><span>TU MISIÓN DE HOY</span><span aria-hidden="true">✦</span></div>
+          <div className="daily-mission-top"><span>{activity.todayDone ? "TU SIGUIENTE RETO" : "TU MISIÓN DE HOY"}</span><span aria-hidden="true">✦</span></div>
           <h2 id="daily-title">{mission.title}</h2>
           <p>{mission.detail}</p>
           <div className="daily-mission-meta"><span>◷ {mission.kind === "diagnostic" ? "5–7 minutos" : "5 minutos"}</span><span>▣ {mission.label}</span></div>
+          {activity.todayDone && <div className="mission-done" role="status">✓ Actividad de hoy guardada</div>}
           <button className="primary-cta" onClick={startHomeMission}>{mission.action} <Icon name="arrow"/></button>
         </section>
 
-        <section className="daily-overview" aria-label="Tu avance">
-          <div><strong>{mission.level}</strong><span>Nivel actual</span></div>
-          <div><strong>{levelLessons}/4</strong><span>Lecciones</span></div>
-          <div><strong>{activity.days.filter(day => day.active).length}</strong><span>Días esta semana</span></div>
-        </section>
-
         <section className="week-progress" aria-labelledby="week-progress-title">
-          <div className="home-section-heading"><h2 id="week-progress-title">Tu progreso</h2><button onClick={() => navigate("Ruta")}>Ver ruta <Icon name="arrow"/></button></div>
-          <p>{activity.todayDone ? "Hoy ya entrenaste. Puedes seguir con la siguiente misión." : activity.streak > 0 ? "Retoma cuando puedas; tu constancia cuenta." : activity.activeDays > 0 ? "Qué gusto tenerte de vuelta. Retoma a tu ritmo." : "Tu primera práctica comenzará a llenar esta semana."}</p>
+          <div className="home-section-heading"><h2 id="week-progress-title">Mi avance</h2><button onClick={() => navigate("Ruta")}>Ver ruta <Icon name="arrow"/></button></div>
+          <div className="daily-overview" aria-label="Tu avance"><div><strong>{mission.level}</strong><span>Nivel actual</span></div><div><strong>{levelLessons}/4</strong><span>Lecciones</span></div><div><strong>{activity.days.filter(day => day.active).length}</strong><span>Días esta semana</span></div></div>
+          <p className="week-caption">Tu semana de práctica</p>
           <div className="week-days">{activity.days.map(day => <div key={day.key} className="week-day"><span>{day.label}</span><b className={`${day.active ? "is-active" : ""} ${day.today ? "is-today" : ""}`} aria-label={`${day.key}: ${day.active ? "actividad completada" : day.future ? "día futuro" : "sin actividad"}`}>{day.active ? "✓" : ""}</b></div>)}</div>
-          <small>{activity.streak > 0 ? `${activity.streak} ${activity.streak === 1 ? "día seguido" : "días seguidos"} · la racha cuenta prácticas terminadas, no velocidad` : "Cada día con una actividad terminada cuenta."}</small>
+          <small>{activity.streak > 0 ? `${activity.streak} ${activity.streak === 1 ? "día seguido" : "días seguidos"} · cuenta tu constancia, no tu velocidad` : activity.activeDays > 0 ? "Retoma a tu ritmo; cada actividad terminada cuenta." : "Cada día con una actividad terminada cuenta."}</small>
         </section>
 
         <button className="curious-home" onClick={() => openLibrary(curiousKind)}>
@@ -389,6 +416,8 @@ export default function Home() {
           <Icon name="arrow"/>
         </button>
 
+        <details className="home-measurements">
+          <summary><span><strong>Tus mediciones y Club 300</strong><small>{ppm !== null || comprehension !== null ? `${ppm !== null ? `${Math.round(ppm)} ppm` : "Velocidad pendiente"} · ${comprehension !== null ? `${comprehension}% comprensión` : "comprensión pendiente"}` : "Consulta tu avance cuando tengas lecturas comparables"}</small></span><span aria-hidden="true">⌄</span></summary>
         <section className="home-evidence" aria-labelledby="evidence-title">
           <div className="home-section-heading"><h2 id="evidence-title">Tus mediciones</h2><button onClick={() => navigate("Ruta")}>Cómo se miden <Icon name="arrow"/></button></div>
           <div className="home-evidence-grid"><div><span>Velocidad</span><strong>{ppm !== null ? `${Math.round(ppm)} ppm` : "Pendiente de medir"}</strong><small>{ppm !== null ? "Mediana de lecturas comparables" : dashboard?.calibration.count ? `${dashboard.calibration.count}/3 lecturas comparables` : "Empieza con tu diagnóstico"}</small></div><div><span>Comprensión</span><strong>{comprehension !== null ? `${comprehension}%` : "Pendiente de medir"}</strong><small>{comprehension !== null ? "Promedio de lecturas válidas" : "Se estima con varias lecturas"}</small></div></div>
@@ -400,6 +429,7 @@ export default function Home() {
           <div className="club-compact-track" role="progressbar" aria-label="Referencia de velocidad hacia 300 ppm; no certifica el club" aria-valuenow={clubSpeedProgress} aria-valuemin={0} aria-valuemax={100}><span style={{width: `${clubSpeedProgress}%`}}/></div>
           <small>El club requiere velocidad, comprensión y evidencia comparable.</small>
         </section>
+        </details>
 
         <details className="home-history"><summary>Ver toda mi actividad</summary><div><span>Diagnóstico: {dashboard?.stats.diagnosticCompleted ? "completado" : "pendiente"}</span><span>{dashboard?.stats.lessonsCompleted ?? 0} lecciones terminadas</span><span>{dashboard?.stats.readingsCount ?? 0} lecturas</span><span>{dashboard?.stats.trainingCount ?? 0} ejercicios</span><span>{dashboard?.stats.flashRounds ?? 0} rondas de cifras</span></div></details>
         </>}
@@ -414,9 +444,19 @@ export default function Home() {
         {activeTab === "Prácticas" && <section className="section-page" aria-labelledby="practice-heading">
           <p className="eyebrow">LABORATORIO OPCIONAL</p><h1 id="practice-heading">Prácticas</h1>
           <p>Entrena habilidades a tu ritmo. Los resultados de este espacio no desbloquean lecciones ni acreditan clubes.</p>
-          <button className="flash-lab-card" onClick={() => { if (!user) setAuthOpen(true); else setFlashOrigin("lab"); }}><span>✦</span><strong>Cifras fugaces</strong><small>{dashboard?.lab.numbersRounds ? `${3 + Math.floor(dashboard.lab.numbersRank / 3)} dígitos · escalón ${dashboard.lab.numbersRank % 3 + 1}/3 · ${dashboard.lab.numbersRounds} rondas` : "Ocho destellos · nivel adaptativo compartido con Ruta"}</small><b aria-hidden="true">→</b></button>
-          <div className="variety-grid">{practiceModes.map(mode => <button key={mode.kind} className={`variety-card variety-${mode.kind}`} onClick={() => openLibrary(mode.kind)}><span className="variety-mark" aria-hidden="true">{mode.mark}</span><strong>{mode.title}</strong><small>{mode.description}</small></button>)}</div>
-          <p className="section-note">Los destellos de palabras, las letras transpuestas y la ronda mixta se incorporarán después con su propio progreso.</p>
+          <button className="practice-featured" onClick={() => { if (recommendedLab.kind === "flash") { if (!user) setAuthOpen(true); else setFlashOrigin("lab"); } else openLibrary(recommendedLab.kind); }}>
+            <span className="practice-featured-badge">RECOMENDADO PARA TI</span><strong>{recommendedLab.title}</strong><span>{recommendedLab.reason}</span><small>{recommendedLab.kind === "flash" ? "8 destellos · reto breve" : "Ejercicios variables · práctica opcional"}</small><b aria-hidden="true">→</b>
+          </button>
+          <div className="variety-grid">{practiceModes.map(mode => {
+            const results = practiceCatalog?.exercises.filter(exercise => exercise.kind === mode.kind) ?? [];
+            const latest = results.filter(exercise => exercise.lastCompletedAt).sort((a,b) => (b.lastCompletedAt ?? "").localeCompare(a.lastCompletedAt ?? ""))[0];
+            return <button key={mode.kind} className={`variety-card variety-${mode.kind}`} onClick={() => openLibrary(mode.kind)}><span className="variety-mark" aria-hidden="true">{mode.mark}</span><strong>{mode.title}</strong><small>{mode.description}</small><span className="variety-card-foot"><span>{latest?.lastScore !== null && latest?.lastScore !== undefined ? `Último ${latest.lastScore}%` : mode.kind === "reading" ? "Lecturas disponibles" : results.length ? `${results.length} retos` : "Explorar"}</span><span>{mode.kind === "reading" ? "↗" : "→"}</span></span></button>;
+          })}</div>
+          {recommendedLab.kind !== "flash" && <button className="flash-lab-card flash-lab-secondary" onClick={() => { if (!user) setAuthOpen(true); else setFlashOrigin("lab"); }}><span>✦</span><strong>Cifras fugaces</strong><small>{dashboard?.lab.numbersRounds ? `${dashboard.lab.numbersRounds} rondas · nivel ${3 + Math.floor(dashboard.lab.numbersRank / 3)} dígitos` : "8 destellos · atención visual"}</small><b aria-hidden="true">→</b></button>}
+          <section className="lab-results" aria-label="Resultados recientes"><div className="home-section-heading"><h2>Mi resultado reciente</h2><button onClick={() => openLibrary(practiceCatalog?.recentResult?.kind ?? "find_data")}>Ver retos <Icon name="arrow"/></button></div>
+            {practiceCatalog?.recentResult ? <div className="lab-result-row"><span className="lab-result-icon" aria-hidden="true">✦</span><div><strong>{practiceCatalog.recentResult.title}</strong><small>{new Date(practiceCatalog.recentResult.lastCompletedAt).toLocaleDateString("es-MX")}</small></div><span><strong>{practiceCatalog.recentResult.lastScore}%</strong><small>precisión</small></span>{practiceCatalog.recentResult.lastDurationSeconds !== null && <span><strong>{Math.floor(practiceCatalog.recentResult.lastDurationSeconds / 60)}:{String(practiceCatalog.recentResult.lastDurationSeconds % 60).padStart(2,"0")}</strong><small>tiempo</small></span>}{practiceCatalog.recentResult.scoreChange !== null && <span><strong>{practiceCatalog.recentResult.scoreChange > 0 ? "+" : ""}{practiceCatalog.recentResult.scoreChange}</strong><small>puntos</small></span>}</div> : <p>Completa un reto y aquí verás tu precisión y tiempo.</p>}
+          </section>
+          {practiceCatalogError && <p className="inline-error" role="alert">{practiceCatalogError}</p>}
         </section>}
 
         {activeTab === "Perfil" && <section className="section-page" aria-labelledby="account-heading">

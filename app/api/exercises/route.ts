@@ -16,7 +16,12 @@ export async function POST(request: Request) {
       const result = await supabaseFetch("/rest/v1/rpc/submit_training", token, {
         method: "POST", body: JSON.stringify({ p_attempt_id: body.attemptId, p_selected_indices: body.selectedIndices }),
       });
-      return Response.json({ result });
+      let durationSeconds: number | null = null;
+      try {
+        const attempts = await supabaseFetch(`/rest/v1/training_attempts?select=duration_seconds&id=eq.${encodeURIComponent(body.attemptId)}&limit=1`, token);
+        durationSeconds = attempts?.[0]?.duration_seconds ?? null;
+      } catch { /* The saved score remains available even if the optional time lookup fails. */ }
+      return Response.json({ result: { ...result, durationSeconds } });
     }
     throw new ApiError("La solicitud del ejercicio no es válida.", 422);
   } catch (error) { return apiErrorResponse(error); }

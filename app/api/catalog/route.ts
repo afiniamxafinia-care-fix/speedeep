@@ -6,13 +6,16 @@ export async function GET() {
     const [articles, exercises, attempts, placement, readings] = await Promise.all([
       supabaseFetch("/rest/v1/reading_articles?select=id,title,category,word_count,difficulty_level,estimated_minutes&is_published=eq.true&order=created_at.asc,title.asc", token),
       supabaseFetch("/rest/v1/training_exercises?select=id,title,kind,estimated_minutes&is_published=eq.true&order=created_at.asc,title.asc", token),
-      supabaseFetch("/rest/v1/training_attempts?select=exercise_id,score&completed_at=not.is.null&order=completed_at.desc&limit=100", token),
+      supabaseFetch("/rest/v1/training_attempts?select=exercise_id,score,duration_seconds,completed_at&completed_at=not.is.null&order=completed_at.desc&limit=1000", token),
       supabaseFetch("/rest/v1/rpc/get_my_diagnostic_placement", token, { method: "POST", body: "{}" }),
       supabaseFetch("/rest/v1/practice_sessions?select=article_id,article_content_version,comprehension_score,reading_articles(difficulty_level)&validity_status=eq.valid&completed_at=not.is.null&order=completed_at.desc&limit=100", token),
     ]);
-    const scores = new Map<string, number>();
-    for (const attempt of attempts ?? []) {
-      if (!scores.has(attempt.exercise_id)) scores.set(attempt.exercise_id, attempt.score);
+    type TrainingResult = { exercise_id: string; score: number; duration_seconds: number | null; completed_at: string };
+    const history = new Map<string, TrainingResult[]>();
+    for (const attempt of attempts as TrainingResult[] ?? []) {
+      const prior = history.get(attempt.exercise_id) ?? [];
+      prior.push(attempt);
+      history.set(attempt.exercise_id, prior);
     }
     type ValidReading = { article_id: string; article_content_version: number; comprehension_score: number | null; reading_articles: { difficulty_level: string } | null };
     const seen = new Set<string>();
@@ -38,7 +41,12 @@ export async function GET() {
         : initial.reason,
       source: adjustedRange !== baseline ? "recent_readings" : "diagnostic",
     } : null;
-    return Response.json({ articles, placement: practicePlacement,
-      exercises: exercises.map((e: { id: string }) => ({ ...e, lastScore: scores.get(e.id) ?? null })) });
+    const cards = (exercises as { id: string; title: string; kind: string; estimated_minutes: number }[]).map(e => {
+      const results = history.get(e.id) ?? [];
+      return { ...e, lastScore: results[0]?.score ?? null, lastDurationSeconds: results[0]?.duration_seconds ?? null,
+        lastCompletedAt: results[0]?.completed_at ?? null, scoreChange: results.length > 1 ? results[0].score - results[1].score : null };
+    });
+    const recent = cards.filter(item => item.lastCompletedAt).sort((a, b) => (b.lastCompletedAt ?? "").localeCompare(a.lastCompletedAt ?? ""))[0] ?? null;
+    return Response.json({ articles, placement: practicePlacement, exercises: cards, recentResult: recent });
   } catch (error) { return apiErrorResponse(error); }
 }

@@ -355,7 +355,8 @@ export default function Home() {
     setReadingStarted(false);
     setPractice(null);
     setPracticeTicket(null);
-    if (practiceOrigin === "route") navigate("Ruta");
+    // La ruta ya está activa; evitar una navegación de Next al cerrar la lectura.
+    if (practiceOrigin === "route") setActiveTab("Ruta");
   };
 
   const signOut = async () => {
@@ -478,7 +479,7 @@ export default function Home() {
           })}</div>
           {recommendedLab.kind !== "flash" && <button className="flash-lab-card flash-lab-secondary" onClick={() => { if (!user) setAuthOpen(true); else setFlashOrigin("lab"); }}><span>✦</span><strong>Cifras fugaces</strong><small>{dashboard?.lab.numbersRounds ? `${dashboard.lab.numbersRounds} rondas · nivel ${3 + Math.floor(dashboard.lab.numbersRank / 3)} dígitos` : "8 destellos · atención visual"}</small><b aria-hidden="true">→</b></button>}
           <section className="lab-results" aria-label="Resultados recientes"><div className="home-section-heading"><h2>Mi resultado reciente</h2><button onClick={() => openLibrary(practiceCatalog?.recentResult?.kind ?? "find_data")}>Ver retos <Icon name="arrow"/></button></div>
-            {practiceCatalog?.recentResult ? <div className="lab-result-row"><span className="lab-result-icon" aria-hidden="true">✦</span><div><strong>{practiceCatalog.recentResult.title}</strong><small>{new Date(practiceCatalog.recentResult.lastCompletedAt).toLocaleDateString("es-MX")}</small></div><span><strong>{practiceCatalog.recentResult.lastScore}%</strong><small>precisión</small></span>{practiceCatalog.recentResult.lastDurationSeconds !== null && <span><strong>{Math.floor(practiceCatalog.recentResult.lastDurationSeconds / 60)}:{String(practiceCatalog.recentResult.lastDurationSeconds % 60).padStart(2,"0")}</strong><small>tiempo</small></span>}{practiceCatalog.recentResult.scoreChange !== null && <span><strong>{practiceCatalog.recentResult.scoreChange > 0 ? "+" : ""}{practiceCatalog.recentResult.scoreChange}</strong><small>puntos</small></span>}</div> : <p>Completa un reto y aquí verás tu precisión y tiempo.</p>}
+            {practiceCatalog?.recentResult ? <div className="lab-result-row"><span className="lab-result-icon" aria-hidden="true">✦</span><div><strong>{practiceCatalog.recentResult.title}</strong><small>{new Date(practiceCatalog.recentResult.lastCompletedAt).toLocaleDateString("es-MX")}</small></div><span><strong>{practiceCatalog.recentResult.lastScore}%</strong><small>precisión</small></span>{practiceCatalog.recentResult.lastDurationSeconds !== null && <span><strong>{Math.floor(practiceCatalog.recentResult.lastDurationSeconds / 60)}:{String(practiceCatalog.recentResult.lastDurationSeconds % 60).padStart(2,"0")}</strong><small>tiempo</small></span>}{practiceCatalog.recentResult.scoreChange !== null && <span><strong>{practiceCatalog.recentResult.lastScore - practiceCatalog.recentResult.scoreChange}% → {practiceCatalog.recentResult.lastScore}%</strong><small>intento anterior → actual</small></span>}</div> : <p>Completa un reto y aquí verás tu precisión y tiempo.</p>}
           </section>
           {practiceCatalogError && <p className="inline-error" role="alert">{practiceCatalogError}</p>}
         </section>}
@@ -525,7 +526,7 @@ export default function Home() {
           <div className="result-grid"><div><strong>{Math.round(practiceResult.rawActivePpm)}</strong><span>ppm en esta lectura</span></div><div><strong>{practiceResult.comprehensionScore}%</strong><span>comprensión</span></div><div><strong>{practiceResult.correctAnswers}/{practiceResult.totalQuestions}</strong><span>respuestas</span></div></div>
           <p className="practice-instructions">{practiceResult.speedEligible && practice.article.slug.startsWith("calibracion-") ? `Esta lectura cuenta para tu velocidad de referencia (${Math.min(3, dashboard?.stats.speedEvidenceCount ?? 0)}/3 lecturas comparables).` : practiceResult.speedEligible ? "Esta lectura queda guardada como evaluación; tu referencia actual usa tres textos comparables de Ruta." : "Este resultado queda en Prácticas; no se suma a la velocidad de referencia."}</p>
           {practiceOrigin === "route" && practiceResult.comprehensionScore < 70 && <p className="practice-instructions">Necesitamos más comprensión en un texto nuevo para usar este PPM como referencia.</p>}
-          <button className="primary-cta practice-action" onClick={endPractice}>{practiceOrigin === "route" ? "Volver a mi ruta" : "Volver a Prácticas"} <Icon name="arrow"/></button>
+          <button className="primary-cta practice-action" onClick={() => { endPractice(); setActiveTab("Home"); }}>Ver mi avance en Home <Icon name="arrow"/></button>
         </> : !readingStarted ? <div className="reading-ready">
           <strong>Lee a tu ritmo</strong>
           <p>Cuando estés listo, toca «Iniciar lectura». El texto aparecerá y el tiempo empezará en 0:00. Al terminar, responderás unas preguntas.</p>

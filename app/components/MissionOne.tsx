@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Case = { step: number; role: "probe" | "guided" | "transfer"; sentence: string; question: string; options: string[] };
 type State = { attemptId: string; status: "active" | "completed"; variant: string; case?: Case; retryPending?: boolean; priorFeedback?: string | null; transferCorrect?: number; integrationPassed?: boolean | null };
@@ -13,6 +13,11 @@ export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [readForRecall, setReadForRecall] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  }, [state?.case?.step, state?.attemptId, state?.retryPending]);
 
   async function load() {
     setBusy(true); setError("");
@@ -82,7 +87,7 @@ export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" 
       <h2 id="mission-title">{lessonCode === "4.C" ? "Recupera el sentido" : lessonCode === "4.1" ? "Detecta cuándo se pierde el sentido" : lessonCode === "4.2" ? "Elige cómo reparar" : lessonCode === "4.3" ? "Vuelve con un propósito" : lessonCode === "4.4" ? "Recupera el foco" : lessonCode === "3.C" ? "Comprende textos nuevos" : lessonCode === "3.1" ? "Ordena los hechos" : lessonCode === "3.2" ? "Descubre qué causó el cambio" : lessonCode === "3.3" ? "Compara posturas" : lessonCode === "3.4" ? "Infiere con evidencias" : lessonCode === "1.1" ? "Conserva la acción central" : lessonCode === "1.2" ? "Une palabras que van juntas" : lessonCode === "1.3" ? "Sigue el giro de los conectores" : lessonCode === "1.4" ? "Resuelve vocabulario sin perder el hilo" : lessonCode === "2.1" ? "Di de qué trata el párrafo" : lessonCode === "2.2" ? "Separa idea y apoyo" : lessonCode === "2.3" ? "Conecta oraciones" : lessonCode === "2.4" ? "Conserva la esencia" : lessonCode === "2.C" ? "Comprende párrafos nuevos" : "Comprende oraciones nuevas"}</h2>
       {current && state?.status !== "completed" && <div className="mission-progress">{current.role === "probe" ? "Explora" : current.role === "guided" ? "Practica" : "Aplica"} · {current.step} de 6</div>}
     </header>
-    <div className="mission-body">
+    <div className="mission-body" ref={bodyRef}>
       {!state && !error && <p className="practice-instructions" role="status">Preparando la lección…</p>}
       {state?.status === "completed" ? <div className="mission-complete">
         <strong>{lessonCode.endsWith(".C") ? "Ronda terminada" : "Lección completada"}</strong>

@@ -219,3 +219,17 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid rgba(
 .club-goal-numbers{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:15px 0 10px}.club-goal-numbers strong{font:800 clamp(16px,5vw,23px)/1.2 Manrope,sans-serif}.club-goal-numbers strong span{font-size:.65em}.club-goal-numbers b{color:#087d90;font-size:15px}.club-goal-track{height:9px;overflow:hidden;border-radius:99px;background:#e2ebef}.club-goal-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#087c9d,#08b8c8);transition:width .3s}.club-goal p{margin:11px 0 5px;color:#4b6378;font-size:11px}.club-goal small{color:#728294;font-size:10px;line-height:1.4}
 @media(max-width:370px){.speed-card,.club-goal{padding:14px}.speed-card-context{display:block}.speed-card-context strong{display:block;margin-top:5px}}
 .speed-next-read{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:38px;margin-top:10px;border:1px solid #48b9c5;border-radius:11px;background:#effbfc;color:#087d90;font-size:11px;font-weight:800}.speed-next-read svg{width:15px;height:15px}
+
+/* A completed lesson can remain open while its latest transfer evidence suggests practice. */
+.route-state-dot-reinforce{background:var(--coral)}
+.route-step-reinforce{border-color:#f6bc8c;background:#fffaf3}
+.route-step-reinforce .route-step-marker,.route-step-completed.route-step-reinforce .route-step-marker,.route-step-current.route-step-reinforce .route-step-marker{background:var(--coral);color:#fff;font-size:24px;font-weight:800}
+.route-step-reinforce .route-step-action,.route-step-reinforce .route-step-action-optional{border:1px solid #f6bd91;background:#fff0e4;color:#8b4329}
+.reinforce-label{display:inline-block;margin-left:8px;padding:3px 6px;border-radius:6px;background:#ffe7d6;color:#89402a;font-size:9px;letter-spacing:0;text-transform:none;white-space:nowrap}
+
+/* Motion signals a measured value without suggesting that the underlying ppm changes. */
+.speed-gauge-halo{opacity:.18;transform-box:fill-box;transform-origin:center;animation:speed-halo 2.8s ease-out infinite}
+.speed-gauge-measured .speed-gauge-value{animation:speed-value-in .7s ease-out both}
+@keyframes speed-halo{0%{transform:scale(.8);opacity:.25}70%,100%{transform:scale(1.7);opacity:0}}
+@keyframes speed-value-in{from{opacity:.4;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.speed-gauge-halo,.speed-gauge-measured .speed-gauge-value{animation:none}.speed-gauge-halo{opacity:.14}}

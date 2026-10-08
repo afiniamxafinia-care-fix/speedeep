@@ -430,12 +430,12 @@ export default function Home() {
 
         <section className="speed-card" aria-labelledby="speed-title">
           <div className="speed-card-title"><span className="speed-icon" aria-hidden="true">◴</span><h2 id="speed-title">Velocidad de lectura</h2></div>
-          <div className="speed-gauge" role="img" aria-label={measuredPpm === null ? "Velocidad pendiente de medir; escala de 0 a 500 ppm" : `${Math.round(measuredPpm)} palabras por minuto en escala de 0 a 500` }>
+          <div className={`speed-gauge ${measuredPpm === null ? "speed-gauge-pending" : "speed-gauge-measured"}`} role="img" aria-label={measuredPpm === null ? "Velocidad pendiente de medir; escala de 0 a 500 ppm" : `${Math.round(measuredPpm)} palabras por minuto en escala de 0 a 500` }>
             <svg viewBox="0 0 320 183" aria-hidden="true" focusable="false">
               <defs><linearGradient id="speed-gauge-gradient"><stop offset="0%" stopColor="#087c9d"/><stop offset="43%" stopColor="#08b8c8"/><stop offset="66%" stopColor="#b9e34a"/><stop offset="83%" stopColor="#ffba4b"/><stop offset="100%" stopColor="#ff875e"/></linearGradient></defs>
               <path d="M 30 149 A 130 130 0 0 1 290 149" fill="none" stroke="#e5edf0" strokeWidth="19" strokeLinecap="round"/>
               <path d="M 30 149 A 130 130 0 0 1 290 149" fill="none" stroke="url(#speed-gauge-gradient)" strokeWidth="19" strokeLinecap="round" opacity={measuredPpm === null ? .35 : 1}/>
-              {measuredPpm !== null && <><circle cx={gaugeX} cy={gaugeY} r="15" fill="#fff"/><circle cx={gaugeX} cy={gaugeY} r="10" fill="#1689cb"/></>}
+              {measuredPpm !== null && <><circle className="speed-gauge-halo" cx={gaugeX} cy={gaugeY} r="20" fill="#08b8c8"/><circle className="speed-gauge-marker" cx={gaugeX} cy={gaugeY} r="15" fill="#fff"/><circle className="speed-gauge-marker" cx={gaugeX} cy={gaugeY} r="10" fill="#1689cb"/></>}
             </svg>
             <div className="speed-gauge-value"><strong>{measuredPpm === null ? "Pendiente" : Math.round(measuredPpm)}</strong>{measuredPpm !== null && <span>ppm</span>}<small>{measuredPpm === null ? "de medir" : hasReference ? "Referencia comparable" : "Última lectura válida"}</small></div>
             <div className="speed-gauge-scale"><span>0</span><span>500 ppm</span></div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type PracticeKind = "reading" | "main_idea" | "sequence" | "find_data" | "relevance";
 export const practiceModes: { kind: PracticeKind; title: string; description: string; mark: string }[] = [
@@ -26,6 +26,13 @@ export default function PracticeLibrary({ initialKind = "reading", origin = "lab
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const sheetRef = useRef<HTMLElement>(null);
+  const activeAttemptId = active?.attemptId;
+  const hasResult = result !== null;
+
+  useEffect(() => {
+    sheetRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  }, [activeAttemptId, hasResult, kind]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -76,7 +83,7 @@ export default function PracticeLibrary({ initialKind = "reading", origin = "lab
   const mode = practiceModes.find(m => m.kind === (exercise?.kind ?? kind))!;
   const complete = exercise?.kind === "sequence" ? selected.length === exercise.items.length : selected.length > 0;
   return <div className="sheet-backdrop library-backdrop" onClick={onClose}>
-    <section className="profile-sheet library-sheet" role="dialog" aria-modal="true" aria-labelledby="library-title" onClick={e => e.stopPropagation()}>
+    <section className="profile-sheet library-sheet" ref={sheetRef} role="dialog" aria-modal="true" aria-labelledby="library-title" onClick={e => e.stopPropagation()}>
       <div className="sheet-handle"/><button className="sheet-close" aria-label="Cerrar biblioteca de prácticas" onClick={onClose}>×</button>
       <p className="eyebrow">{exercise ? mode.title.toUpperCase() : "ENTRENA A TU MANERA"}</p>
       <h2 id="library-title">{exercise?.title ?? "Tus prácticas"}</h2>

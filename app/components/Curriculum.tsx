@@ -38,15 +38,21 @@ type Props = {
   monitorCompleted?: string[];
   monitorIntegration?: { attempted: boolean; passed: boolean; correct: number | null; missing: string[] };
   curiousRotation?: number;
+  curiousCompleted?: string[];
   integratedReadings?: Record<string, { articleId: string | null; ppm: number | null; comprehension: number | null; eligible: boolean; completedAt: string | null }>;
   onIntegratedRead: (articleId: string) => void;
 };
 
-export default function Curriculum({ onStart, onDiagnostic, onFlash, onCuriousPractice, onIntegratedRead, integratedReadings, diagnosticStatus, diagnosticStep, activeStep, activeLessonCode, completedCount = 0, lessonTransferScores = {}, lessonBestTransferScores = {}, sentenceActionState, integration, paragraphFirstCompleted, paragraphSecondCompleted, paragraphThirdCompleted, paragraphFourthCompleted, paragraphIntegration, textCompleted = [], textIntegration, monitorCompleted = [], monitorIntegration, curiousRotation = 0 }: Props) {
+export default function Curriculum({ onStart, onDiagnostic, onFlash, onCuriousPractice, onIntegratedRead, integratedReadings, diagnosticStatus, diagnosticStep, activeStep, activeLessonCode, completedCount = 0, lessonTransferScores = {}, lessonBestTransferScores = {}, sentenceActionState, integration, paragraphFirstCompleted, paragraphSecondCompleted, paragraphThirdCompleted, paragraphFourthCompleted, paragraphIntegration, textCompleted = [], textIntegration, monitorCompleted = [], monitorIntegration, curiousRotation = 0, curiousCompleted = [] }: Props) {
   const practicedFirst = completedCount > 0;
   const [selectedLevel, setSelectedLevel] = useState<"1.1" | "1.2" | "1.3" | "1.4" | null>(null);
-  const currentTab = selectedLevel ?? (textIntegration?.passed ? "1.4" : paragraphIntegration?.passed ? "1.3" : integration?.passed ? "1.2" : "1.1");
-  const levelUnlocked = (level: "1.1" | "1.2" | "1.3" | "1.4") => level === "1.1" || level === "1.2" && Boolean(integration?.passed) || level === "1.3" && Boolean(paragraphIntegration?.passed) || level === "1.4" && Boolean(textIntegration?.passed);
+  // Readers who entered a later level under the earlier gate keep their access.
+  const integratedDone = (level: "1.1" | "1.2" | "1.3" | "1.4") => Boolean(integratedReadings?.[level]?.completedAt)
+    || level === "1.1" && Boolean(paragraphFirstCompleted)
+    || level === "1.2" && textCompleted.includes("3.1")
+    || level === "1.3" && monitorCompleted.includes("4.1");
+  const currentTab = selectedLevel ?? (textIntegration?.passed && integratedDone("1.3") ? "1.4" : paragraphIntegration?.passed && integratedDone("1.2") ? "1.3" : integration?.passed && integratedDone("1.1") ? "1.2" : "1.1");
+  const levelUnlocked = (level: "1.1" | "1.2" | "1.3" | "1.4") => level === "1.1" || level === "1.2" && Boolean(integration?.passed) && integratedDone("1.1") || level === "1.3" && Boolean(paragraphIntegration?.passed) && integratedDone("1.2") || level === "1.4" && Boolean(textIntegration?.passed) && integratedDone("1.3");
   const levelCompleted = currentTab === "1.1" ? completedCount : currentTab === "1.2" ? [paragraphFirstCompleted, paragraphSecondCompleted, paragraphThirdCompleted, paragraphFourthCompleted].filter(Boolean).length : currentTab === "1.3" ? textCompleted.length : monitorCompleted.length;
   const rotatingKind = (first: PracticeKind, second: PracticeKind) => curiousRotation % 2 === 0 ? first : second;
   const integrativeCard = (level: "1.1" | "1.2" | "1.3" | "1.4", passed: boolean) => {
@@ -62,12 +68,13 @@ export default function Curriculum({ onStart, onDiagnostic, onFlash, onCuriousPr
   };
   const curiousBreak = (level: "1.1" | "1.2" | "1.3" | "1.4", after: 1 | 3, available: boolean, kind: PracticeKind) => <li key={`${level}-curious-${after}`} className={`route-break ${available ? "route-break-ready" : "route-break-waiting"}`}>
     <span className="route-break-icon" aria-hidden="true">✦</span><div><span>PAUSA CURIOSA · DESPUÉS DE LA LECCIÓN {after}</span><strong>{({ main_idea: "Idea principal", sequence: "Secuencias", find_data: "Busca el dato", relevance: "Lo relevante", reading: "Lectura" } as const)[kind]}</strong><small>Reto breve con ejercicios variables. Su resultado se guarda en Prácticas; es opcional para avanzar.</small></div>
-    <button disabled={!available} onClick={() => onCuriousPractice(kind, level, after)}>{available ? "Jugar" : `Al completar ${after}`}</button>
+    <button disabled={!available || curiousCompleted.includes(`${level}:${after}`)} onClick={() => onCuriousPractice(kind, level, after)}>{curiousCompleted.includes(`${level}:${after}`) ? "Hecha ✓" : available ? "Jugar" : `Al completar ${after}`}</button>
   </li>;
   return <section className="section-page learning-route" aria-labelledby="route-heading">
     <p className="eyebrow">TU RUTA DE APRENDIZAJE</p>
     <h1 id="route-heading">{currentTab === "1.1" ? currentLevel.title : currentTab === "1.2" ? "Construir la idea del párrafo" : currentTab === "1.3" ? "Relacionar partes de un texto" : "Monitorea tu comprensión"}</h1>
     <p>{currentTab === "1.1" ? currentLevel.mission : currentTab === "1.2" ? "Encuentra la idea, el apoyo y las conexiones entre las oraciones." : currentTab === "1.3" ? "Reconoce cómo se organiza un texto y sigue sus ideas hasta sintetizarlo." : "Nota cuándo se rompe el sentido y aprende a recuperar el hilo."}</p>
+    <div className="route-skills" aria-label="Habilidades que desarrolla este subnivel"><strong>Habilidades que desarrollas</strong><div>{(currentTab === "1.1" ? ["Q · Sentido de la oración", "S · Lectura con comprensión"] : currentTab === "1.2" ? ["Q · Idea principal y síntesis", "D · Localizar apoyo"] : currentTab === "1.3" ? ["Q · Relación e inferencia", "D · Seguir un texto completo"] : ["Q · Autocontrol", "D · Releer con propósito"]).map(skill => <span key={skill}>{skill}</span>)}</div><small>La lectura integradora también observa velocidad; el resultado se incorpora a la referencia solo si cumple los criterios de comparabilidad.</small></div>
 
     <div className="route-progress-head"><strong>Nivel {currentTab}</strong><span>{levelCompleted}/4 lecciones</span><div role="progressbar" aria-label={`Lecciones completadas del nivel ${currentTab}`} aria-valuenow={levelCompleted} aria-valuemin={0} aria-valuemax={4}><i style={{ width: `${Math.min(4, levelCompleted) * 25}%` }}/></div></div>
     {monitorIntegration?.passed && <div className="route-consolidated"><strong>✓ Nivel 1 consolidado</strong><span>Los subniveles 1.1 a 1.4 permanecen disponibles para repasar.</span></div>}
@@ -119,7 +126,7 @@ export default function Curriculum({ onStart, onDiagnostic, onFlash, onCuriousPr
         return [card, <li key="numbers-break" className={`route-break ${practicedFirst ? "route-break-ready" : "route-break-waiting"}`}>
           <span className="route-break-icon" aria-hidden="true">✦</span>
           <div><span>PAUSA CURIOSA · DESPUÉS DE LA LECCIÓN 1</span><strong>Cifras fugaces</strong><small>Ocho destellos para retar tu atención. Cuenta solo para tu nivel de Prácticas.</small></div>
-          <button disabled={!practicedFirst} onClick={onFlash}>{practicedFirst ? "Jugar" : "Al completar 1"}</button>
+          <button disabled={!practicedFirst || curiousCompleted.includes("1.1:1")} onClick={onFlash}>{curiousCompleted.includes("1.1:1") ? "Hecha ✓" : practicedFirst ? "Jugar" : "Al completar 1"}</button>
         </li>];
       })}
     </ol>
@@ -137,7 +144,7 @@ export default function Curriculum({ onStart, onDiagnostic, onFlash, onCuriousPr
       <div className="route-level-title"><div><span>MI RUTA · NIVEL 1.2</span><h2>Una habilidad a la vez.</h2></div><small>4 lecciones + comprobación</small></div>
       <ol className="route-steps" aria-label="Lecciones del nivel 1.2">
         {([
-          { code: "2.1", title: "Di de qué trata el párrafo", detail: "Distingue la idea completa del tema o un detalle.", completed: paragraphFirstCompleted, available: Boolean(integration?.passed) },
+          { code: "2.1", title: "Di de qué trata el párrafo", detail: "Distingue la idea completa del tema o un detalle.", completed: paragraphFirstCompleted, available: levelUnlocked("1.2") },
           { code: "2.2", title: "Separa idea y apoyo", detail: "Encuentra el dato que sostiene una idea.", completed: paragraphSecondCompleted, available: (lessonBestTransferScores["2.1"] ?? -1) >= 1 },
           { code: "2.3", title: "Conecta oraciones", detail: "Sigue a quién o a qué se refiere cada frase.", completed: paragraphThirdCompleted, available: (lessonBestTransferScores["2.2"] ?? -1) >= 1 },
           { code: "2.4", title: "Conserva la esencia", detail: "Resume un párrafo sin copiar detalles secundarios.", completed: paragraphFourthCompleted, available: (lessonBestTransferScores["2.3"] ?? -1) >= 1 },
@@ -154,22 +161,22 @@ export default function Curriculum({ onStart, onDiagnostic, onFlash, onCuriousPr
         {(lessonBestTransferScores["2.4"] ?? -1) >= 1 ? <button className="mission-launch" onClick={() => onStart("2.C")}>{activeLessonCode === "2.C" ? `Seguir · paso ${activeStep} de 6` : paragraphIntegration?.passed ? "Practicar otra variante" : paragraphIntegration?.attempted ? "Probar otra variante" : "Comenzar comprobación"}</button> : <small>Se abre al resolver al menos un caso nuevo de la lección 4.</small>}
       </div>
       {integrativeCard("1.2", Boolean(paragraphIntegration?.passed))}
-      {paragraphIntegration?.passed && <div className="route-anchor"><span className="eyebrow">SIGUIENTE · NIVEL 1.3</span><strong>Tu siguiente nivel está abierto</strong><p>Cuatro lecciones te llevarán del párrafo al texto completo.</p><button className="mission-launch" onClick={() => setSelectedLevel("1.3")}>Ver nivel 1.3</button></div>}
+      {levelUnlocked("1.3") && <div className="route-anchor"><span className="eyebrow">SIGUIENTE · NIVEL 1.3</span><strong>Tu siguiente nivel está abierto</strong><p>Cuatro lecciones te llevarán del párrafo al texto completo.</p><button className="mission-launch" onClick={() => setSelectedLevel("1.3")}>Ver nivel 1.3</button></div>}
     </> : currentTab === "1.3" ? <>
       <div className="route-level-title"><div><span>MI RUTA · NIVEL 1.3</span><h2>Del párrafo al texto completo.</h2></div><small>4 lecciones + comprobación</small></div>
       <ol className="route-steps" aria-label="Lecciones del nivel 1.3">{([
-          { code: "3.1", title: "Ordena los hechos", detail: "Reconstruye las etapas y reconoce el dato vigente.", completed: textCompleted.includes("3.1"), available: Boolean(paragraphIntegration?.passed) },
+          { code: "3.1", title: "Ordena los hechos", detail: "Reconstruye las etapas y reconoce el dato vigente.", completed: textCompleted.includes("3.1"), available: levelUnlocked("1.3") },
         { code: "3.2", title: "Descubre qué causó el cambio", detail: "Distingue evidencia causal de hechos que solo coincidieron.", completed: textCompleted.includes("3.2"), available: textCompleted.includes("3.1") },
         { code: "3.3", title: "Compara posturas", detail: "Encuentra acuerdos, diferencias y excepciones.", completed: textCompleted.includes("3.3"), available: textCompleted.includes("3.2") },
         { code: "3.4", title: "Infiere con evidencias", detail: "Separa datos explícitos, conclusiones y lo que aún no se sabe.", completed: textCompleted.includes("3.4"), available: textCompleted.includes("3.3") },
       ] as const).flatMap((lesson,index) => { const score = lessonTransferScores[lesson.code]; const reinforce = lesson.available && score !== undefined && score < 2; const card = <li key={lesson.code} className={`route-step ${lesson.completed ? "route-step-completed" : lesson.available ? "route-step-current" : "route-step-locked"} ${reinforce ? "route-step-reinforce" : ""}`}><span className="route-step-marker" aria-hidden="true">{reinforce ? "↻" : lesson.completed ? "✓" : lesson.available ? "○" : "🔒"}</span><div className="route-step-copy"><span>NIVEL 1.3 · LECCIÓN {index+1}{reinforce && <b className="reinforce-label">↻ Reforzar</b>}</span><strong>{lesson.title}</strong><small>{activeLessonCode === lesson.code ? `En curso · paso ${activeStep} de 6` : lesson.completed ? `Completada · ${lessonTransferScores[lesson.code] ?? 0}/2 en casos nuevos` : lesson.available ? lessonTransferScores[lesson.code] === 0 ? "Terminada · 0/2 en casos nuevos. Prueba otra variante." : lesson.detail : index === 0 ? "Se abre al aprobar la comprobación anterior." : `Resuelve al menos un caso nuevo de la lección ${index}`}</small></div>{lesson.available ? <button className={`route-step-action ${lesson.completed ? "route-step-action-optional" : ""}`} onClick={() => onStart(lesson.code)}>{activeLessonCode === lesson.code ? "Seguir" : reinforce ? "Reforzar" : lesson.completed ? "Practicar" : "Empezar"}<span aria-hidden="true">→</span></button> : <span className="route-step-status">Próximamente</span>}</li>; return index === 0 ? [card, curiousBreak("1.3", 1, lesson.completed, rotatingKind("find_data", "main_idea"))] : index === 2 ? [card, curiousBreak("1.3", 3, lesson.completed, rotatingKind("sequence", "relevance"))] : [card]; })}</ol>
       <div className={`route-closure ${textIntegration?.passed ? "route-closure-passed" : ""}`}><span className="eyebrow">NIVEL 1.3 · COMPROBACIÓN · PARTE 1</span><strong>Comprende textos nuevos</strong><p>{textIntegration?.passed ? `Comprobado: ${textIntegration.correct}/6 al primer intento, con secuencia, causa, contraste e inferencia.` : textIntegration?.attempted ? `Ronda realizada: ${textIntegration.correct}/6. ${textIntegration.missing.length ? "Repasa las habilidades que faltaron y prueba otra variante." : "Prueba otra variante para lograr al menos cinco aciertos."}` : "Seis preguntas sobre textos nuevos para comprobar secuencia, causa, contraste e inferencia."}</p>{textCompleted.includes("3.4") ? <button className="mission-launch" onClick={() => onStart("3.C")}>{activeLessonCode === "3.C" ? `Seguir · paso ${activeStep} de 6` : textIntegration?.passed ? "Practicar otra variante" : textIntegration?.attempted ? "Probar otra variante" : "Comenzar comprobación"}</button> : <small>Se abre al resolver al menos un caso nuevo de la lección 4.</small>}</div>
       {integrativeCard("1.3", Boolean(textIntegration?.passed))}
-      {textIntegration?.passed && <div className="route-anchor"><span className="eyebrow">SIGUIENTE · NIVEL 1.4</span><strong>Tu siguiente nivel está abierto</strong><p>Empieza por detectar cuándo un texto deja de tener sentido.</p><button className="mission-launch" onClick={() => setSelectedLevel("1.4")}>Ver nivel 1.4</button></div>}
+      {levelUnlocked("1.4") && <div className="route-anchor"><span className="eyebrow">SIGUIENTE · NIVEL 1.4</span><strong>Tu siguiente nivel está abierto</strong><p>Empieza por detectar cuándo un texto deja de tener sentido.</p><button className="mission-launch" onClick={() => setSelectedLevel("1.4")}>Ver nivel 1.4</button></div>}
     </> : <>
       <div className="route-level-title"><div><span>MI RUTA · NIVEL 1.4</span><h2>Recupera el hilo cuando haga falta.</h2></div><small>4 lecciones + comprobación</small></div>
       <ol className="route-steps" aria-label="Lecciones del nivel 1.4">{([
-        { code: "4.1", title: "Detecta cuándo se pierde el sentido", detail: "Distingue una contradicción real de datos compatibles.", completed: monitorCompleted.includes("4.1"), available: Boolean(textIntegration?.passed) },
+        { code: "4.1", title: "Detecta cuándo se pierde el sentido", detail: "Distingue una contradicción real de datos compatibles.", completed: monitorCompleted.includes("4.1"), available: levelUnlocked("1.4") },
         { code: "4.2", title: "Elige cómo reparar", detail: "Decide qué volver a leer o aclarar.", completed: monitorCompleted.includes("4.2"), available: monitorCompleted.includes("4.1") },
         { code: "4.3", title: "Vuelve con un propósito", detail: "Busca la evidencia precisa.", completed: monitorCompleted.includes("4.3"), available: monitorCompleted.includes("4.2") },
         { code: "4.4", title: "Recupera el foco", detail: "Retoma la última idea tras una pausa.", completed: monitorCompleted.includes("4.4"), available: monitorCompleted.includes("4.3") },

@@ -12,8 +12,8 @@ export async function GET() {
       supabaseFetch("/rest/v1/curriculum_responses?select=attempt_id,first_correct,skill_code&order=answered_at.desc&limit=1000", token),
       supabaseFetch("/rest/v1/diagnostic_attempts?select=next_item,finished_at,started_at&order=started_at.desc&limit=1", token),
       supabaseFetch("/rest/v1/flash_profiles?select=numbers_rank,rounds_completed&limit=1", token),
-      supabaseFetch("/rest/v1/training_attempts?select=id,completed_at&completed_at=not.is.null&order=completed_at.desc&limit=1000", token),
-      supabaseFetch("/rest/v1/flash_rounds?select=completed_at&completed_at=not.is.null&order=completed_at.desc&limit=1000", token),
+      supabaseFetch("/rest/v1/training_attempts?select=id,completed_at,origin,route_level,route_after&completed_at=not.is.null&order=completed_at.desc&limit=1000", token),
+      supabaseFetch("/rest/v1/flash_rounds?select=completed_at,origin&completed_at=not.is.null&order=completed_at.desc&limit=1000", token),
       supabaseFetch("/rest/v1/reading_articles?select=id,slug,word_count,difficulty_level,text_type&slug=in.(la-biblioteca-que-escucho,dos-rutas-para-la-misma-visita,calibracion-el-turno-del-taller,calibracion-el-mapa-del-huerto,calibracion-la-caja-de-los-libros,calibracion-la-nota-en-la-puerta,calibracion-la-mesa-compartida,integracion-1-1-la-nota-del-mercado,integracion-1-2-el-aviso-de-la-biblioteca,integracion-1-3-la-ruta-de-las-cajas,integracion-1-4-la-lista-del-recorrido)&is_published=eq.true", token),
     ]);
     type ReadingSession = { article_id: string; article_content_version: number; completed_at: string | null; validity_status: string; speed_eligible: boolean; timing_protocol_version: string; comprehension_score: number; raw_active_ppm: number | null; reading_articles: { assessment_use: string; word_count: number; slug: string; difficulty_level: string; text_type: string } };
@@ -119,6 +119,10 @@ export async function GET() {
       ...(flashRounds ?? []).map((item: { completed_at: string | null }) => item.completed_at),
       diagnosticAttempts?.[0]?.finished_at ?? null,
     ].filter((value): value is string => typeof value === "string");
+    const curiousCompleted = new Set((trainingAttempts as { origin: string; route_level: string | null; route_after: number | null }[] ?? [])
+      .filter(item => item.origin === "route" && item.route_level && (item.route_after === 1 || item.route_after === 3))
+      .map(item => `${item.route_level}:${item.route_after}`));
+    if ((flashRounds as { origin: string }[] ?? []).some(item => item.origin === "route")) curiousCompleted.add("1.1:1");
     return Response.json({
       user: { name: profile?.[0]?.display_name ?? authUser.user_metadata?.name ?? "Lector", avatarUrl: profile?.[0]?.avatar_url ?? null },
       membership: subscriptions?.[0] ?? null,
@@ -131,6 +135,7 @@ export async function GET() {
         completedCount: ["1.1", "1.2", "1.3", "1.4"].filter(code => completedLessons.has(code)).length,
         lessonTransferScores,
         lessonBestTransferScores,
+        curiousCompleted: [...curiousCompleted],
         paragraphFirstCompleted: completedLessons.has("2.1"),
         paragraphSecondCompleted: completedLessons.has("2.2"),
         paragraphThirdCompleted: completedLessons.has("2.3"),

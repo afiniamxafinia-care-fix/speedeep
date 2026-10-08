@@ -4,7 +4,7 @@ export async function GET() {
   try {
     const token = await requireAccessToken();
     const [articles, exercises, attempts, placement, readings] = await Promise.all([
-      supabaseFetch("/rest/v1/reading_articles?select=id,title,category,word_count,difficulty_level,estimated_minutes&is_published=eq.true&slug=not.like.integracion-*&order=created_at.asc,title.asc", token),
+      supabaseFetch("/rest/v1/reading_articles?select=id,title,category,word_count,difficulty_level,estimated_minutes&is_published=eq.true&assessment_use=eq.short_practice&order=created_at.asc,title.asc", token),
       supabaseFetch("/rest/v1/training_exercises?select=id,title,kind,estimated_minutes&is_published=eq.true&order=created_at.asc,title.asc", token),
       supabaseFetch("/rest/v1/training_attempts?select=exercise_id,score,duration_seconds,completed_at&completed_at=not.is.null&order=completed_at.desc&limit=1000", token),
       supabaseFetch("/rest/v1/rpc/get_my_diagnostic_placement", token, { method: "POST", body: "{}" }),
@@ -47,6 +47,7 @@ export async function GET() {
         lastCompletedAt: results[0]?.completed_at ?? null, scoreChange: results.length > 1 ? results[0].score - results[1].score : null };
     });
     const recent = cards.filter(item => item.lastCompletedAt).sort((a, b) => (b.lastCompletedAt ?? "").localeCompare(a.lastCompletedAt ?? ""))[0] ?? null;
-    return Response.json({ articles, placement: practicePlacement, exercises: cards, recentResult: recent });
+    const readIds = new Set((readings as ValidReading[] ?? []).map(item => item.article_id));
+    return Response.json({ articles: (articles as { id: string }[]).map(article => ({ ...article, read: readIds.has(article.id) })), placement: practicePlacement, exercises: cards, recentResult: recent });
   } catch (error) { return apiErrorResponse(error); }
 }

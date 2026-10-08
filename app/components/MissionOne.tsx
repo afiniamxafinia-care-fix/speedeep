@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 type Case = { step: number; role: "probe" | "guided" | "transfer"; sentence: string; question: string; options: string[] };
-type State = { attemptId: string; status: "active" | "completed"; variant: string; case?: Case; retryPending?: boolean; priorFeedback?: string | null; transferCorrect?: number; integrationPassed?: boolean | null };
+type State = { attemptId: string; status: "active" | "completed"; variant: string; case?: Case; group?: Case[]; retryPending?: boolean; priorFeedback?: string | null; transferCorrect?: number; integrationPassed?: boolean | null };
 type Feedback = { feedback: string; correct: boolean; retryNeeded: boolean; completed: boolean; transferCorrect: number | null; integrationPassed?: boolean | null };
 
 export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1" | "2.2" | "2.3" | "2.4" | "2.C" | "3.1" | "3.2" | "3.3" | "3.4" | "3.C" | "4.1" | "4.2" | "4.3" | "4.4" | "4.C"; onClose: () => void }) {
@@ -96,7 +96,7 @@ export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" 
       </div> : current && <>
         <p className="mission-instruction">{instruction}</p>
         {!recall || !readForRecall ? <div className="passage exercise-context">{current.sentence}</div> : <p className="practice-instructions">El texto está oculto. Recupera la última idea y el siguiente objetivo.</p>}
-        {recall && !readForRecall ? <button className="primary-cta practice-action" onClick={() => setReadForRecall(true)}>Ya leí · ocultar texto</button> : <><p className="mission-question">{current.question}</p>
+        {recall && !readForRecall ? <button className="primary-cta practice-action" onClick={() => setReadForRecall(true)}>Ya leí · ocultar texto</button> : <>{(state.group?.length ?? 0) > 1 && <div className="mission-question-list"><strong>Preguntas de este texto</strong>{state.group!.map(item => <p key={item.step} className={item.step === current.step ? "current" : ""}><span>{item.step}.</span> {item.question} {item.step > current.step && <small>Al terminar la anterior</small>}</p>)}</div>}<p className="mission-question">{current.question}</p>
         <div className="answer-list">{current.options.map((option, index) => <button key={`${current.step}-${index}`} className={`answer-option ${chosen === index ? "chosen" : ""}`} disabled={busy || chosen !== null} onClick={() => { void choose(index); }}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div></>}
       </>}
     </div>

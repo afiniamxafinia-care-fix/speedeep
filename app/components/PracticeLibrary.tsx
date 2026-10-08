@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type PracticeKind = "reading" | "main_idea" | "sequence" | "find_data" | "relevance";
 export const practiceModes: { kind: PracticeKind; title: string; description: string; mark: string }[] = [
@@ -10,7 +10,7 @@ export const practiceModes: { kind: PracticeKind; title: string; description: st
   { kind: "find_data", title: "Busca el dato", description: "Lee con un objetivo", mark: "⌕" },
   { kind: "relevance", title: "Lo relevante", description: "Elige lo que sí importa", mark: "✓" },
 ];
-type Article = { id: string; title: string; category: string; word_count: number; difficulty_level: string; estimated_minutes: number };
+type Article = { id: string; title: string; category: string; word_count: number; difficulty_level: string; estimated_minutes: number; read: boolean };
 type TrainingCard = { id: string; title: string; kind: PracticeKind; estimated_minutes: number; lastScore: number | null; lastDurationSeconds: number | null; lastCompletedAt: string | null; scoreChange: number | null };
 type Exercise = { id: string; title: string; kind: PracticeKind; instructions: string; context: string; items: string[] };
 type Result = { score: number; expectedIndices: number[]; explanation: string; durationSeconds: number | null; scoreChange: number | null };
@@ -19,7 +19,7 @@ type Placement = { readingRange: "beginner" | "intermediate" | "advanced"; recom
 export default function PracticeLibrary({ initialKind = "reading", origin = "lab", routeLevel, routeAfter, onClose, onRead }: {
   initialKind?: PracticeKind; origin?: "route" | "lab"; routeLevel?: string; routeAfter?: 1 | 3; onClose: () => void; onRead: (id: string) => void;
 }) {
-  const [kind, setKind] = useState(initialKind);
+  const kind = initialKind;
   const [catalog, setCatalog] = useState<{ articles: Article[]; exercises: TrainingCard[]; placement: Placement | null } | null>(null);
   const [active, setActive] = useState<{ attemptId: string; exercise: Exercise } | null>(null);
   const [selected, setSelected] = useState<number[]>([]);
@@ -27,6 +27,7 @@ export default function PracticeLibrary({ initialKind = "reading", origin = "lab
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const sheetRef = useRef<HTMLElement>(null);
+  const launchedRef = useRef(false);
   const activeAttemptId = active?.attemptId;
   const hasResult = result !== null;
 
@@ -44,7 +45,7 @@ export default function PracticeLibrary({ initialKind = "reading", origin = "lab
     return () => controller.abort();
   }, []);
 
-  async function begin(id: string) {
+  const begin = useCallback(async (id: string) => {
     setBusy(true); setError("");
     try {
       const response = await fetch("/api/exercises", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "begin", exerciseId: id, origin, routeLevel: routeLevel ?? null, routeAfter: routeAfter ?? null }) });
@@ -53,7 +54,27 @@ export default function PracticeLibrary({ initialKind = "reading", origin = "lab
       setActive(data); setSelected([]); setResult(null);
     } catch (err) { setError(err instanceof Error ? err.message : "No se pudo abrir el ejercicio."); }
     finally { setBusy(false); }
-  }
+  }, [origin, routeLevel, routeAfter]);
+
+  const pickExercise = useCallback((excludeId?: string) => {
+    const candidates = catalog?.exercises.filter(e => e.kind === kind && e.id !== excludeId) ?? [];
+    const unseen = candidates.filter(e => !e.lastCompletedAt);
+    const pool = (unseen.length ? unseen : candidates.slice().sort((a, b) => (a.lastCompletedAt ?? "").localeCompare(b.lastCompletedAt ?? ""))).slice(0, 3);
+    return pool[Math.floor(Math.random() * pool.length)];
+  }, [catalog, kind]);
+
+  useEffect(() => {
+    if (!catalog || launchedRef.current) return;
+    launchedRef.current = true;
+    if (kind === "reading") {
+      const suggested = catalog.articles.find(article => !article.read && article.difficulty_level === catalog.placement?.readingRange)
+        ?? catalog.articles.find(article => !article.read) ?? catalog.articles[0];
+      if (suggested) queueMicrotask(() => onRead(suggested.id));
+    } else {
+      const suggested = pickExercise();
+      if (suggested) queueMicrotask(() => { void begin(suggested.id); });
+    }
+  }, [catalog, kind, onRead, pickExercise, begin]);
 
   function choose(index: number) {
     if (!active || result || busy) return;
@@ -87,16 +108,7 @@ export default function PracticeLibrary({ initialKind = "reading", origin = "lab
       <div className="sheet-handle"/><button className="sheet-close" aria-label="Cerrar biblioteca de prácticas" onClick={onClose}>×</button>
       <p className="eyebrow">{exercise ? mode.title.toUpperCase() : "ENTRENA A TU MANERA"}</p>
       <h2 id="library-title">{exercise?.title ?? "Tus prácticas"}</h2>
-      {!exercise ? <>
-        <p className="practice-instructions">Elige una lectura o un reto breve para entrenar una habilidad concreta.</p>
-        {catalog?.placement && <div className="diagnostic-placement"><strong>Tu punto de partida sugerido</strong>
-          <p>{catalog.placement.reason} Rango de lectura: {({ beginner: "inicial", intermediate: "intermedio", advanced: "avanzado" } as const)[catalog.placement.readingRange]}.</p>
-          <small>{catalog.placement.source === "recent_readings" ? "Ajuste provisional por comprensión en textos nuevos." : "Orientación provisional del diagnóstico; se ajusta con lecturas nuevas."}</small>
-          {catalog.placement.recommendedKind !== kind && practiceModes.some(m => m.kind === catalog.placement?.recommendedKind) && <button className="mission-launch" onClick={() => setKind(catalog.placement!.recommendedKind as PracticeKind)}>Ver práctica sugerida</button>}</div>}
-        <div className="mode-tabs" role="tablist" aria-label="Tipos de práctica">{practiceModes.map(m => <button key={m.kind} role="tab" aria-selected={kind === m.kind} className={kind === m.kind ? "selected" : ""} onClick={() => setKind(m.kind)}>{m.title}</button>)}</div>
-        {!catalog && !error && <p className="practice-instructions" role="status">Cargando tus prácticas…</p>}
-        <div className="catalog-list">{kind === "reading" ? catalog?.articles.slice().sort((a,b) => Number(b.difficulty_level === catalog.placement?.readingRange) - Number(a.difficulty_level === catalog.placement?.readingRange)).map(a => <button key={a.id} className="catalog-card" onClick={() => onRead(a.id)}><span className="catalog-mark">↗</span><span><strong>{a.title}</strong><small>{a.category} · {a.word_count} palabras · {a.estimated_minutes} min</small><small>{({ beginner: "Inicial", intermediate: "Intermedio", advanced: "Avanzado" } as Record<string, string>)[a.difficulty_level] ?? "Práctica breve"}{a.difficulty_level === catalog.placement?.readingRange ? " · sugerida" : ""}</small></span><b aria-hidden="true">→</b></button>) : catalog?.exercises.filter(e => e.kind === kind).sort((a, b) => (a.lastCompletedAt ?? "").localeCompare(b.lastCompletedAt ?? "")).map(e => <button key={e.id} className="catalog-card" disabled={busy} onClick={() => begin(e.id)}><span className={`catalog-mark mark-${e.kind}`}>{mode.mark}</span><span><strong>{e.title}</strong><small>{mode.description} · {e.estimated_minutes} min</small>{e.lastScore !== null && <small className="saved-score">Precisión {e.lastScore}%{e.lastDurationSeconds !== null ? ` · ${Math.floor(e.lastDurationSeconds / 60)}:${String(e.lastDurationSeconds % 60).padStart(2, "0")}` : ""}{e.scoreChange !== null ? ` · antes ${e.lastScore - e.scoreChange}% → ahora ${e.lastScore}%` : ""}</small>}</span><b aria-hidden="true">→</b></button>)}</div>
-      </> : <>
+      {!exercise ? <p className="practice-instructions" role="status">{error ? "No pudimos abrir el reto." : catalog && kind === "reading" && !catalog.articles.length || catalog && kind !== "reading" && !catalog.exercises.some(e => e.kind === kind) ? "No hay retos disponibles en esta categoría." : "Buscando un reto para ti…"}</p> : <>
         {!result && <>
           <p className="practice-instructions">{exercise.instructions}</p>
           <div className="passage exercise-context">{exercise.context}</div>
@@ -111,7 +123,8 @@ export default function PracticeLibrary({ initialKind = "reading", origin = "lab
           <ol className="solution-list">{result.expectedIndices.map(index => <li key={index}>{exercise.items[index]}</li>)}</ol>
           <p className="practice-instructions">Resultado guardado. Estos retos entrenan habilidades concretas; las PPM se miden en las lecturas cronometradas.</p>
         </>}
-        <button className="secondary-action" disabled={busy} onClick={() => { setActive(null); setError(""); }}> {result ? "Elegir otra práctica" : "Volver al catálogo"}</button>
+        {origin === "lab" && result && <button className="secondary-action" disabled={busy || (catalog?.exercises.filter(e => e.kind === kind).length ?? 0) < 2} onClick={() => { const next = pickExercise(exercise.id); if (next) void begin(next.id); }}>Otro reto de {mode.title.toLowerCase()}</button>}
+        <button className="secondary-action" disabled={busy} onClick={onClose}>{origin === "route" && result ? "Volver a la ruta" : "Cerrar"}</button>
       </>}
       {error && <p className="inline-error" role="alert">{error}</p>}
     </section>

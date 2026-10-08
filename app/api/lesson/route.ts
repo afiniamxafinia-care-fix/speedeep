@@ -8,7 +8,11 @@ export async function GET(request: Request) {
     const state = await supabaseFetch("/rest/v1/rpc/begin_curriculum_lesson", token, {
       method: "POST", body: JSON.stringify({ p_lesson_code: lessonCode }),
     });
-    return Response.json(state);
+    if (state.status !== "active") return Response.json(state);
+    const group = await supabaseFetch("/rest/v1/rpc/curriculum_passage_group", token, {
+      method: "POST", body: JSON.stringify({ p_attempt_id: state.attemptId }),
+    });
+    return Response.json({ ...state, group });
   } catch (error) { return apiErrorResponse(error); }
 }
 

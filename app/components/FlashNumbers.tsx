@@ -98,8 +98,8 @@ export default function FlashNumbers({ origin, onClose }: { origin: "route" | "l
     {state?.status === "completed" && <>
       <div className="training-result"><strong>{state.correct}<small>/8</small></strong><span>Ronda completada · {state.played.digits} dígitos</span></div>
       <p className="answer-feedback">{origin === "diagnostic" ? "Tu punto de partida" : "Tu reto actual"}: {state.level.digits} dígitos. Llevas {state.level.roundsCompleted} rondas completas.</p>
-      <p className="practice-instructions">La próxima ronda se ajustará a tus respuestas.</p>
-      {origin !== "diagnostic" && <button className="primary-cta practice-action" disabled={busy} onClick={() => void begin()}>Otra ronda</button>}
+      <p className="practice-instructions">{origin === "route" ? "Pausa de Ruta completada. Puedes seguir practicando libremente en el Laboratorio." : "La próxima ronda se ajustará a tus respuestas."}</p>
+      {origin === "lab" && <button className="primary-cta practice-action" disabled={busy} onClick={() => void begin()}>Otra ronda</button>}
       <button className={origin === "diagnostic" ? "primary-cta practice-action" : "secondary-action"} onClick={onClose}>{origin === "diagnostic" ? "Ver mi ruta" : "Volver"}</button>
     </>}
     {error && <><p className="inline-error" role="alert">{error}</p>{!state && <button className="secondary-action" onClick={() => void begin()}>Reintentar</button>}</>}

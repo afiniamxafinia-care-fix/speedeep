@@ -26,7 +26,7 @@ const serverMinute = () => 0;
 const routeMissions = [
   { level: "1.1", codes: ["1.1", "1.2", "1.3", "1.4"], titles: ["Conservar la acción central", "Unir palabras que van juntas", "Seguir los conectores", "Resolver vocabulario"], closure: "1.C", closureTitle: "Comprende oraciones nuevas", passed: "integration" },
   { level: "1.2", codes: ["2.1", "2.2", "2.3", "2.4"], titles: ["Di de qué trata el párrafo", "Separa idea y apoyo", "Conecta oraciones", "Conserva la esencia"], closure: "2.C", closureTitle: "Comprende párrafos nuevos", passed: "paragraphIntegration" },
-  { level: "1.3", codes: ["3.1", "3.2", "3.3", "3.4"], titles: ["Reconoce la estructura", "Conecta ideas entre párrafos", "Sigue un argumento", "Sintetiza un texto"], closure: "3.C", closureTitle: "Comprende textos nuevos", passed: "textIntegration" },
+  { level: "1.3", codes: ["3.1", "3.2", "3.3", "3.4"], titles: ["Ordena los hechos", "Descubre qué causó el cambio", "Compara posturas", "Infiere con evidencias"], closure: "3.C", closureTitle: "Comprende textos nuevos", passed: "textIntegration" },
   { level: "1.4", codes: ["4.1", "4.2", "4.3", "4.4"], titles: ["Detecta la pérdida de sentido", "Elige cómo reparar", "Vuelve con un propósito", "Recupera el foco"], closure: "4.C", closureTitle: "Recupera el sentido", passed: "monitorIntegration" },
 ] as const;
 

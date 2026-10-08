@@ -15,7 +15,7 @@ const currentLevel = {
 };
 
 type Props = {
-  onStart: (code: "1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1" | "2.2" | "2.3" | "2.4" | "2.C" | "3.1" | "3.2" | "3.3" | "3.4" | "3.C" | "4.1") => void;
+  onStart: (code: "1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1" | "2.2" | "2.3" | "2.4" | "2.C" | "3.1" | "3.2" | "3.3" | "3.4" | "3.C" | "4.1" | "4.2" | "4.3" | "4.4" | "4.C") => void;
   onDiagnostic: () => void;
   onFlash: () => void;
   onCuriousPractice: (kind: PracticeKind) => void;
@@ -33,7 +33,8 @@ type Props = {
   paragraphIntegration?: { attempted: boolean; passed: boolean; correct: number | null; missing: string[] };
   textCompleted?: string[];
   textIntegration?: { attempted: boolean; passed: boolean; correct: number | null; missing: string[] };
-  monitorCompleted?: boolean;
+  monitorCompleted?: string[];
+  monitorIntegration?: { attempted: boolean; passed: boolean; correct: number | null; missing: string[] };
   curiousRotation?: number;
   anchor?: { nextArticleId: string | null; baselinePpm: number | null; baselineComprehension: number | null; comparisonPpm: number | null; comparisonComprehension: number | null; deltaPpm: number | null };
   calibration?: { nextArticleId: string | null; count: number; latestPpm: number | null; latestComprehension: number | null };
@@ -41,7 +42,7 @@ type Props = {
   onExploreReading: () => void;
 };
 
-export default function Curriculum({ onStart, onDiagnostic, onFlash, onCuriousPractice, diagnosticStatus, diagnosticStep, activeStep, activeLessonCode, completedCount = 0, sentenceActionState, integration, paragraphFirstCompleted, paragraphSecondCompleted, paragraphThirdCompleted, paragraphFourthCompleted, paragraphIntegration, textCompleted = [], textIntegration, monitorCompleted, curiousRotation = 0, anchor, calibration, onReadAnchor, onExploreReading }: Props) {
+export default function Curriculum({ onStart, onDiagnostic, onFlash, onCuriousPractice, diagnosticStatus, diagnosticStep, activeStep, activeLessonCode, completedCount = 0, sentenceActionState, integration, paragraphFirstCompleted, paragraphSecondCompleted, paragraphThirdCompleted, paragraphFourthCompleted, paragraphIntegration, textCompleted = [], textIntegration, monitorCompleted = [], monitorIntegration, curiousRotation = 0, anchor, calibration, onReadAnchor, onExploreReading }: Props) {
   const practicedFirst = completedCount > 0;
   const [selectedLevel, setSelectedLevel] = useState<"1.1" | "1.2" | "1.3" | "1.4" | null>(null);
   const currentTab = selectedLevel ?? (textIntegration?.passed ? "1.4" : paragraphIntegration?.passed ? "1.3" : integration?.passed ? "1.2" : "1.1");
@@ -153,13 +154,14 @@ export default function Curriculum({ onStart, onDiagnostic, onFlash, onCuriousPr
       <div className="route-anchor"><span className="eyebrow">LECTURA COMPARABLE</span><strong>Observa tu velocidad y comprensión</strong><p>Lee un texto completo nuevo de la misma serie para comparar tus resultados.</p>{calibration?.nextArticleId ? <button className="mission-launch" onClick={() => onReadAnchor(calibration.nextArticleId!)}>Leer texto comparable {Math.min(3, (calibration.count ?? 0) + 1)} de 3</button> : calibration?.count !== undefined && calibration.count >= 3 ? <span className="route-calibration-done">✓ Ya tienes tres lecturas comparables. Consulta tu velocidad de referencia en Home.</span> : <button className="mission-launch" onClick={onExploreReading}>Elegir lectura</button>}</div>
       {textIntegration?.passed && <div className="route-anchor"><span className="eyebrow">SIGUIENTE · NIVEL 1.4</span><strong>Tu siguiente nivel está abierto</strong><p>Empieza por detectar cuándo un texto deja de tener sentido.</p><button className="mission-launch" onClick={() => setSelectedLevel("1.4")}>Ver nivel 1.4</button></div>}
     </> : <>
-      <div className="route-level-title"><div><span>MI RUTA · NIVEL 1.4</span><h2>Recupera el hilo cuando haga falta.</h2></div><small>4 lecciones previstas</small></div>
+      <div className="route-level-title"><div><span>MI RUTA · NIVEL 1.4</span><h2>Recupera el hilo cuando haga falta.</h2></div><small>4 lecciones + comprobación</small></div>
       <ol className="route-steps" aria-label="Lecciones del nivel 1.4">{([
-        { code: "4.1", title: "Detecta cuándo se pierde el sentido", detail: "Distingue una contradicción real de datos compatibles.", completed: monitorCompleted },
-        { code: "4.2", title: "Elige cómo reparar", detail: "Decide qué volver a leer o aclarar.", completed: false },
-        { code: "4.3", title: "Vuelve con un propósito", detail: "Busca la evidencia precisa.", completed: false },
-        { code: "4.4", title: "Recupera el foco", detail: "Retoma la última idea tras una pausa.", completed: false },
-      ] as const).flatMap((lesson,index) => { const available = index === 0; const card = <li key={lesson.code} className={`route-step ${lesson.completed ? "route-step-completed" : available ? "route-step-current" : "route-step-locked"}`}><span className="route-step-marker" aria-hidden="true">{lesson.completed ? "✓" : available ? "○" : "🔒"}</span><div className="route-step-copy"><span>NIVEL 1.4 · LECCIÓN {index+1}</span><strong>{lesson.title}</strong><small>{activeLessonCode === lesson.code ? `En curso · paso ${activeStep} de 6` : lesson.completed ? "Completada · puedes practicarla de nuevo" : available ? lesson.detail : "Próximamente"}</small></div>{available ? <button className={`route-step-action ${lesson.completed ? "route-step-action-optional" : ""}`} onClick={() => onStart("4.1")}>{activeLessonCode === "4.1" ? "Seguir" : lesson.completed ? "Practicar" : "Empezar"}<span aria-hidden="true">→</span></button> : <span className="route-step-status">Próximamente</span>}</li>; return index === 0 ? [card, curiousBreak("1.4", 1, Boolean(monitorCompleted), rotatingKind("relevance", "find_data"))] : index === 2 ? [card, curiousBreak("1.4", 3, false, rotatingKind("sequence", "main_idea"))] : [card]; })}</ol>
+        { code: "4.1", title: "Detecta cuándo se pierde el sentido", detail: "Distingue una contradicción real de datos compatibles.", completed: monitorCompleted.includes("4.1"), available: true },
+        { code: "4.2", title: "Elige cómo reparar", detail: "Decide qué volver a leer o aclarar.", completed: monitorCompleted.includes("4.2"), available: monitorCompleted.includes("4.1") },
+        { code: "4.3", title: "Vuelve con un propósito", detail: "Busca la evidencia precisa.", completed: monitorCompleted.includes("4.3"), available: monitorCompleted.includes("4.2") },
+        { code: "4.4", title: "Recupera el foco", detail: "Retoma la última idea tras una pausa.", completed: monitorCompleted.includes("4.4"), available: monitorCompleted.includes("4.3") },
+      ] as const).flatMap((lesson,index) => { const card = <li key={lesson.code} className={`route-step ${lesson.completed ? "route-step-completed" : lesson.available ? "route-step-current" : "route-step-locked"}`}><span className="route-step-marker" aria-hidden="true">{lesson.completed ? "✓" : lesson.available ? "○" : "🔒"}</span><div className="route-step-copy"><span>NIVEL 1.4 · LECCIÓN {index+1}</span><strong>{lesson.title}</strong><small>{activeLessonCode === lesson.code ? `En curso · paso ${activeStep} de 6` : lesson.completed ? "Completada · puedes practicarla de nuevo" : lesson.available ? lesson.detail : `Completa la lección ${index}`}</small></div>{lesson.available ? <button className={`route-step-action ${lesson.completed ? "route-step-action-optional" : ""}`} onClick={() => onStart(lesson.code)}>{activeLessonCode === lesson.code ? "Seguir" : lesson.completed ? "Practicar" : "Empezar"}<span aria-hidden="true">→</span></button> : <span className="route-step-status">Próximamente</span>}</li>; return index === 0 ? [card, curiousBreak("1.4", 1, lesson.completed, rotatingKind("relevance", "find_data"))] : index === 2 ? [card, curiousBreak("1.4", 3, lesson.completed, rotatingKind("sequence", "main_idea"))] : [card]; })}</ol>
+      <div className={`route-closure ${monitorIntegration?.passed ? "route-closure-passed" : ""}`}><span className="eyebrow">NIVEL 1.4 · COMPROBACIÓN</span><strong>Recupera el sentido en textos nuevos</strong><p>{monitorIntegration?.passed ? `Comprobado: ${monitorIntegration.correct}/6 al primer intento, con detección, reparación, búsqueda y retoma.` : monitorIntegration?.attempted ? `Ronda realizada: ${monitorIntegration.correct}/6. ${monitorIntegration.missing.length ? "Repasa las habilidades que faltaron y prueba otra variante." : "Prueba otra variante para lograr al menos cinco aciertos."}` : "Seis casos nuevos para aplicar las cuatro habilidades sin pistas."}</p>{monitorCompleted.includes("4.4") ? <button className="mission-launch" onClick={() => onStart("4.C")}>{activeLessonCode === "4.C" ? `Seguir · paso ${activeStep} de 6` : monitorIntegration?.passed ? "Practicar otra variante" : monitorIntegration?.attempted ? "Probar otra variante" : "Comenzar comprobación"}</button> : <small>Se abre al completar la lección 4.</small>}</div>
     </>}
   </section>;
 }

@@ -8,7 +8,7 @@ export async function GET() {
       supabaseFetch(`/rest/v1/profiles?select=display_name,avatar_url&id=eq.${encodeURIComponent(authUser.id)}`, token),
       supabaseFetch("/rest/v1/practice_sessions?select=id,article_id,article_content_version,completed_at,raw_active_ppm,adjusted_ppm,comprehension_score,validity_status,speed_eligible,timing_protocol_version,reading_articles(assessment_use,word_count,slug,difficulty_level,text_type)&order=completed_at.desc&limit=1000", token),
       supabaseFetch(`/rest/v1/subscriptions?select=status,trial_ends_at,current_period_ends_at,cancel_at_period_end&user_id=eq.${encodeURIComponent(authUser.id)}`, token),
-      supabaseFetch("/rest/v1/curriculum_attempts?select=id,lesson_code,status,current_step,variant,transfer_correct,started_at,completed_at&lesson_code=in.(1.1,1.2,1.3,1.4,1.C,2.1,2.2,2.3,2.4,2.C,3.1,3.2,3.3,3.4,3.C,4.1)&order=started_at.desc&limit=100", token),
+      supabaseFetch("/rest/v1/curriculum_attempts?select=id,lesson_code,status,current_step,variant,transfer_correct,started_at,completed_at&lesson_code=in.(1.1,1.2,1.3,1.4,1.C,2.1,2.2,2.3,2.4,2.C,3.1,3.2,3.3,3.4,3.C,4.1,4.2,4.3,4.4,4.C)&order=started_at.desc&limit=100", token),
       supabaseFetch("/rest/v1/curriculum_responses?select=attempt_id,first_correct,skill_code&order=answered_at.desc&limit=1000", token),
       supabaseFetch("/rest/v1/diagnostic_attempts?select=next_item,finished_at,started_at&order=started_at.desc&limit=1", token),
       supabaseFetch("/rest/v1/flash_profiles?select=numbers_rank,rounds_completed&limit=1", token),
@@ -83,6 +83,13 @@ export async function GET() {
       const missing = textSkills.filter(skill => !correct.some(item => item.skill_code === skill));
       return { correct: correct.length, passed: responses.length === 6 && correct.length >= 5 && missing.length === 0, missing };
     });
+    const monitorSkills = ["monitor_break", "repair_choice", "targeted_reread", "focus_resume"];
+    const monitorScores = (lessonAttempts as LessonAttempt[] ?? []).filter(item => item.lesson_code === "4.C" && item.status === "completed").map(attempt => {
+      const responses = (lessonResponses as { attempt_id: string; first_correct: boolean; skill_code: string }[] ?? []).filter(item => item.attempt_id === attempt.id);
+      const correct = responses.filter(item => item.first_correct);
+      const missing = monitorSkills.filter(skill => !correct.some(item => item.skill_code === skill));
+      return { correct: correct.length, passed: responses.length === 6 && correct.length >= 5 && missing.length === 0, missing };
+    });
     return Response.json({
       user: { name: profile?.[0]?.display_name ?? authUser.user_metadata?.name ?? "Lector", avatarUrl: profile?.[0]?.avatar_url ?? null },
       membership: subscriptions?.[0] ?? null,
@@ -97,7 +104,8 @@ export async function GET() {
         paragraphThirdCompleted: completedLessons.has("2.3"),
         paragraphFourthCompleted: completedLessons.has("2.4"),
         textCompleted: ["3.1", "3.2", "3.3", "3.4"].filter(code => completedLessons.has(code)),
-        monitorCompleted: completedLessons.has("4.1"),
+        monitorCompleted: ["4.1", "4.2", "4.3", "4.4"].filter(code => completedLessons.has(code)),
+        monitorIntegration: { attempted: monitorScores.length > 0, passed: monitorScores.some(score => score.passed), correct: (monitorScores.find(score => score.passed) ?? monitorScores[0])?.correct ?? null, missing: monitorScores[0]?.missing ?? [] },
         textIntegration: { attempted: textScores.length > 0, passed: textScores.some(score => score.passed), correct: (textScores.find(score => score.passed) ?? textScores[0])?.correct ?? null, missing: textScores[0]?.missing ?? [] },
         lastTransferCorrect: (lessonAttempts as LessonAttempt[] ?? []).find(item => item.lesson_code === "1.1" && item.status === "completed")?.transfer_correct ?? null,
         sentenceActionState: demonstrated ? "demonstrated" : completedLessons.has("1.1") ? "completed" : "not_started",

@@ -6,12 +6,13 @@ type Case = { step: number; role: "probe" | "guided" | "transfer"; sentence: str
 type State = { attemptId: string; status: "active" | "completed"; variant: string; case?: Case; retryPending?: boolean; priorFeedback?: string | null; transferCorrect?: number; integrationPassed?: boolean | null };
 type Feedback = { feedback: string; correct: boolean; retryNeeded: boolean; completed: boolean; transferCorrect: number | null; integrationPassed?: boolean | null };
 
-export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1" | "2.2" | "2.3" | "2.4" | "2.C" | "3.1" | "3.2" | "3.3" | "3.4" | "3.C" | "4.1"; onClose: () => void }) {
+export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" | "1.2" | "1.3" | "1.4" | "1.C" | "2.1" | "2.2" | "2.3" | "2.4" | "2.C" | "3.1" | "3.2" | "3.3" | "3.4" | "3.C" | "4.1" | "4.2" | "4.3" | "4.4" | "4.C"; onClose: () => void }) {
   const [state, setState] = useState<State | null>(null);
   const [chosen, setChosen] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [readForRecall, setReadForRecall] = useState(false);
 
   async function load() {
     setBusy(true); setError("");
@@ -19,7 +20,7 @@ export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" 
       const response = await fetch(`/api/lesson?lessonCode=${lessonCode}`, { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "No se pudo abrir la misión.");
-      setState(data); setFeedback(null); setChosen(null);
+      setState(data); setFeedback(null); setChosen(null); setReadForRecall(false);
     } catch (err) { setError(err instanceof Error ? err.message : "No se pudo abrir la misión."); }
     finally { setBusy(false); }
   }
@@ -60,7 +61,8 @@ export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" 
   }
 
   const current = state?.case;
-  const instruction = lessonCode === "4.1" ? current?.role === "transfer" ? "Decide sin pistas si hay una ruptura real de sentido." : "Comprueba si los datos pueden ser ciertos a la vez." : lessonCode === "3.C" ? "Resuelve con lo que sabes, sin pistas." : lessonCode.startsWith("3.") ? current?.role === "transfer" ? "Lee este texto nuevo y aplica lo aprendido sin pistas." : "Lee las partes del texto y observa cómo se relacionan."
+  const recall = lessonCode === "4.4" || lessonCode === "4.C" && (current?.step === 4 || current?.step === 6);
+  const instruction = lessonCode === "4.C" ? "Aplica las cuatro habilidades sin pistas." : lessonCode === "4.4" ? "Lee y, al ocultar el texto, recupera el hilo." : lessonCode === "4.3" ? "Busca el fragmento preciso para tu propósito." : lessonCode === "4.2" ? "Elige una reparación proporcional a la duda." : lessonCode === "4.1" ? current?.role === "transfer" ? "Decide sin pistas si hay una ruptura real de sentido." : "Comprueba si los datos pueden ser ciertos a la vez." : lessonCode === "3.C" ? "Resuelve con lo que sabes, sin pistas." : lessonCode.startsWith("3.") ? current?.role === "transfer" ? "Lee este texto nuevo y aplica lo aprendido sin pistas." : "Lee las partes del texto y observa cómo se relacionan."
     : lessonCode === "2.C" ? "Resuelve con lo que sabes, sin pistas."
     : lessonCode === "2.4" ? current?.role === "transfer" ? "Resume sin pistas." : "Conserva la idea y elimina detalles secundarios."
     : lessonCode === "2.3" ? current?.step === 1 ? "Recuerda qué hecho sostiene el resultado." : current?.role === "transfer" ? "Sigue la referencia sin pistas." : "Busca a quién o a qué señala esa palabra."
@@ -76,8 +78,8 @@ export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" 
   return <div className="sheet-backdrop library-backdrop" onClick={onClose}><section className="profile-sheet library-sheet mission-sheet" role="dialog" aria-modal="true" aria-labelledby="mission-title" onClick={event => event.stopPropagation()}>
     <header className="mission-header">
       <button className="sheet-close" onClick={onClose} aria-label="Cerrar misión">×</button>
-      <p className="eyebrow">{lessonCode === "4.1" ? "NIVEL 1.4 · LECCIÓN 1" : lessonCode.startsWith("3.") ? `NIVEL 1.3 · ${lessonCode === "3.C" ? "COMPROBACIÓN" : `LECCIÓN ${lessonCode.split(".")[1]}`}` : lessonCode.startsWith("2.") ? `NIVEL 1.2 · ${lessonCode === "2.C" ? "COMPROBACIÓN" : `LECCIÓN ${lessonCode.split(".")[1]}`}` : `NIVEL 1.1 · ${lessonCode === "1.C" ? "COMPROBACIÓN" : `LECCIÓN ${lessonCode.split(".")[1]}`}`}</p>
-      <h2 id="mission-title">{lessonCode === "4.1" ? "Detecta cuándo se pierde el sentido" : lessonCode === "3.C" ? "Comprende textos nuevos" : lessonCode === "3.1" ? "Reconoce la estructura" : lessonCode === "3.2" ? "Conecta ideas entre párrafos" : lessonCode === "3.3" ? "Sigue un argumento" : lessonCode === "3.4" ? "Sintetiza un texto completo" : lessonCode === "1.1" ? "Conserva la acción central" : lessonCode === "1.2" ? "Une palabras que van juntas" : lessonCode === "1.3" ? "Sigue el giro de los conectores" : lessonCode === "1.4" ? "Resuelve vocabulario sin perder el hilo" : lessonCode === "2.1" ? "Di de qué trata el párrafo" : lessonCode === "2.2" ? "Separa idea y apoyo" : lessonCode === "2.3" ? "Conecta oraciones" : lessonCode === "2.4" ? "Conserva la esencia" : lessonCode === "2.C" ? "Comprende párrafos nuevos" : "Comprende oraciones nuevas"}</h2>
+      <p className="eyebrow">{lessonCode.startsWith("4.") ? `NIVEL 1.4 · ${lessonCode === "4.C" ? "COMPROBACIÓN" : `LECCIÓN ${lessonCode.split(".")[1]}`}` : lessonCode.startsWith("3.") ? `NIVEL 1.3 · ${lessonCode === "3.C" ? "COMPROBACIÓN" : `LECCIÓN ${lessonCode.split(".")[1]}`}` : lessonCode.startsWith("2.") ? `NIVEL 1.2 · ${lessonCode === "2.C" ? "COMPROBACIÓN" : `LECCIÓN ${lessonCode.split(".")[1]}`}` : `NIVEL 1.1 · ${lessonCode === "1.C" ? "COMPROBACIÓN" : `LECCIÓN ${lessonCode.split(".")[1]}`}`}</p>
+      <h2 id="mission-title">{lessonCode === "4.C" ? "Recupera el sentido" : lessonCode === "4.1" ? "Detecta cuándo se pierde el sentido" : lessonCode === "4.2" ? "Elige cómo reparar" : lessonCode === "4.3" ? "Vuelve con un propósito" : lessonCode === "4.4" ? "Recupera el foco" : lessonCode === "3.C" ? "Comprende textos nuevos" : lessonCode === "3.1" ? "Reconoce la estructura" : lessonCode === "3.2" ? "Conecta ideas entre párrafos" : lessonCode === "3.3" ? "Sigue un argumento" : lessonCode === "3.4" ? "Sintetiza un texto completo" : lessonCode === "1.1" ? "Conserva la acción central" : lessonCode === "1.2" ? "Une palabras que van juntas" : lessonCode === "1.3" ? "Sigue el giro de los conectores" : lessonCode === "1.4" ? "Resuelve vocabulario sin perder el hilo" : lessonCode === "2.1" ? "Di de qué trata el párrafo" : lessonCode === "2.2" ? "Separa idea y apoyo" : lessonCode === "2.3" ? "Conecta oraciones" : lessonCode === "2.4" ? "Conserva la esencia" : lessonCode === "2.C" ? "Comprende párrafos nuevos" : "Comprende oraciones nuevas"}</h2>
       {current && state?.status !== "completed" && <div className="mission-progress">{current.role === "probe" ? "Explora" : current.role === "guided" ? "Practica" : "Aplica"} · {current.step} de 6</div>}
     </header>
     <div className="mission-body">
@@ -88,9 +90,9 @@ export default function MissionOne({ lessonCode, onClose }: { lessonCode: "1.1" 
         <button className="primary-cta" onClick={onClose}>Volver a la ruta</button>
       </div> : current && <>
         <p className="mission-instruction">{instruction}</p>
-        <div className="passage exercise-context">{current.sentence}</div>
-        <p className="mission-question">{current.question}</p>
-        <div className="answer-list">{current.options.map((option, index) => <button key={`${current.step}-${index}`} className={`answer-option ${chosen === index ? "chosen" : ""}`} disabled={busy || chosen !== null} onClick={() => { void choose(index); }}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div>
+        {!recall || !readForRecall ? <div className="passage exercise-context">{current.sentence}</div> : <p className="practice-instructions">El texto está oculto. Recupera la última idea y el siguiente objetivo.</p>}
+        {recall && !readForRecall ? <button className="primary-cta practice-action" onClick={() => setReadForRecall(true)}>Ya leí · ocultar texto</button> : <><p className="mission-question">{current.question}</p>
+        <div className="answer-list">{current.options.map((option, index) => <button key={`${current.step}-${index}`} className={`answer-option ${chosen === index ? "chosen" : ""}`} disabled={busy || chosen !== null} onClick={() => { void choose(index); }}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div></>}
       </>}
     </div>
     {state?.status !== "completed" && <div className="mission-response" aria-live="polite">

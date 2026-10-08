@@ -124,7 +124,7 @@ export async function GET() {
         paragraphThirdCompleted: completedLessons.has("2.3"),
         paragraphFourthCompleted: completedLessons.has("2.4"),
         textCompleted: ["3.1", "3.2", "3.3", "3.4"].filter(code => (lessonBestTransferScores[code] ?? -1) >= 1),
-        monitorCompleted: ["4.1", "4.2", "4.3", "4.4"].filter(code => completedLessons.has(code)),
+        monitorCompleted: ["4.1", "4.2", "4.3", "4.4"].filter(code => (lessonBestTransferScores[code] ?? -1) >= 1),
         monitorIntegration: { attempted: monitorScores.length > 0, passed: monitorScores.some(score => score.passed), correct: (monitorScores.find(score => score.passed) ?? monitorScores[0])?.correct ?? null, missing: monitorScores[0]?.missing ?? [] },
         textIntegration: { attempted: textScores.length > 0, passed: textScores.some(score => score.passed), correct: (textScores.find(score => score.passed) ?? textScores[0])?.correct ?? null, missing: textScores[0]?.missing ?? [] },
         lastTransferCorrect: (lessonAttempts as LessonAttempt[] ?? []).find(item => item.lesson_code === "1.1" && item.status === "completed")?.transfer_correct ?? null,

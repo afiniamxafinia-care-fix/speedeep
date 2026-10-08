@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import PracticeLibrary, { practiceModes, type PracticeKind } from "@/app/components/PracticeLibrary";
 import Curriculum from "@/app/components/Curriculum";
 import MissionOne from "@/app/components/MissionOne";
@@ -19,6 +19,9 @@ type Tab = "Home" | "Ruta" | "Arena" | "Prácticas" | "Perfil";
 const tabs: Tab[] = ["Home", "Ruta", "Arena", "Prácticas", "Perfil"];
 
 const profileAvatars = ["avatar-aqua", "avatar-violet", "avatar-coral", "avatar-lime"];
+const subscribeMinute = (notify: () => void) => { const timer = window.setInterval(notify, 30_000); return () => window.clearInterval(timer); };
+const currentMinute = () => Math.floor(Date.now() / 60_000);
+const serverMinute = () => 0;
 
 const routeMissions = [
   { level: "1.1", codes: ["1.1", "1.2", "1.3", "1.4"], titles: ["Conservar la acción central", "Unir palabras que van juntas", "Seguir los conectores", "Resolver vocabulario"], closure: "1.C", closureTitle: "Comprende oraciones nuevas", passed: "integration" },
@@ -31,7 +34,8 @@ function localDay(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function weeklyActivity(times: string[], now: Date) {
+function weeklyActivity(times: string[], now: Date | null) {
+  if (!now) return { days: [] as { key: string; label: string; active: boolean; today: boolean; future: boolean }[], streak: 0, activeDays: 0, todayDone: false };
   const active = new Set(times.map(value => new Date(value)).filter(date => !Number.isNaN(date.getTime())).map(localDay));
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const start = new Date(today);
@@ -102,6 +106,7 @@ function UserAvatar({ photo, initials, variant = "avatar-aqua", className = "" }
 export default function Home() {
   const [dashboard, setDashboard] = useState<DashboardWithAnchor | null>(null);
   const [user, setUser] = useState<{ email: string; name: string } | null>(null);
+  const minute = useSyncExternalStore(subscribeMinute, currentMinute, serverMinute);
   const userEmail = user?.email;
   const [, setLoading] = useState(true);
   const [appError, setAppError] = useState("");
@@ -144,7 +149,7 @@ export default function Home() {
   const [practiceResult, setPracticeResult] = useState<{ rawActivePpm: number; comprehensionScore: number; correctAnswers: number; totalQuestions: number; speedEligible: boolean } | null>(null);
 
   const mission = homeMission(dashboard);
-  const activity = weeklyActivity(dashboard?.activityTimes ?? [], new Date());
+  const activity = weeklyActivity(dashboard?.activityTimes ?? [], minute ? new Date(minute * 60_000) : null);
   const levelGroup = routeMissions.find(group => group.level === mission.level) ?? routeMissions[0];
   const levelLessons = levelGroup.codes.filter(code => (dashboard?.curriculum.lessonBestTransferScores[code] ?? -1) >= 1).length;
   const curiousKind: PracticeKind = (dashboard?.stats.trainingCount ?? 0) % 2 === 0 ? "find_data" : "sequence";

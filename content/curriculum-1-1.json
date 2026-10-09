@@ -1,0 +1,218 @@
+[
+  {
+    "variant": "A",
+    "step": 1,
+    "role": "probe",
+    "sentence": "Lucía, después de revisar tres propuestas, eligió la opción más sencilla.",
+    "question": "¿Qué hizo Lucía al final?",
+    "options": [
+      "Revisó tres propuestas",
+      "Eligió la opción más sencilla",
+      "Presentó tres propuestas"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "Revisar ocurrió antes; la acción central es que eligió una opción.",
+      "Exacto. El detalle intercalado explica qué hizo antes.",
+      "La oración no dice que Lucía presentara propuestas."
+    ]
+  },
+  {
+    "variant": "A",
+    "step": 2,
+    "role": "probe",
+    "sentence": "El tren, pese a la lluvia intensa, salió a tiempo de la estación.",
+    "question": "¿Qué ocurrió?",
+    "options": [
+      "La lluvia detuvo al tren",
+      "El tren llegó tarde",
+      "El tren salió a tiempo"
+    ],
+    "correct_index": 2,
+    "feedback": [
+      "La lluvia es una dificultad, pero no impidió la salida.",
+      "La oración habla de la salida, no de la llegada.",
+      "Sí. Conservaste la acción central a pesar del detalle."
+    ]
+  },
+  {
+    "variant": "A",
+    "step": 3,
+    "role": "guided",
+    "sentence": "Después de recibir la alerta, el equipo de guardia cerró la entrada norte.",
+    "question": "¿Qué hizo el equipo?",
+    "options": [
+      "Recibió la alerta y abrió la entrada",
+      "Cerró la entrada norte",
+      "Cerró todas las entradas"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "La alerta ocurrió primero; la entrada fue cerrada.",
+      "Correcto. El detalle inicial indica cuándo actuó el equipo.",
+      "El texto solo menciona la entrada norte."
+    ]
+  },
+  {
+    "variant": "A",
+    "step": 4,
+    "role": "guided",
+    "sentence": "Marta no entregó el informe que había corregido durante la mañana.",
+    "question": "¿Qué NO hizo Marta?",
+    "options": [
+      "Corregir un informe",
+      "Entregar el informe",
+      "Trabajar durante la mañana"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "Corregir aparece como realizado; observa «no» junto a «entregó».",
+      "Bien. La negación cambia la acción principal.",
+      "La negación afecta a la entrega del informe."
+    ]
+  },
+  {
+    "variant": "A",
+    "step": 5,
+    "role": "transfer",
+    "sentence": "Aunque el precio subió el lunes, la tienda mantuvo el descuento anunciado.",
+    "question": "¿Qué hizo la tienda?",
+    "options": [
+      "Retiró el descuento",
+      "Mantuvo el descuento",
+      "Bajó el precio el lunes"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "«Aunque» presenta un contraste: el descuento se mantuvo.",
+      "Sí. Separaste el cambio de precio de la decisión de la tienda.",
+      "El precio subió; la tienda mantuvo el descuento."
+    ]
+  },
+  {
+    "variant": "A",
+    "step": 6,
+    "role": "transfer",
+    "sentence": "La coordinadora, tras escuchar a los vecinos, aplazó la reunión del viernes.",
+    "question": "¿Qué sucedió con la reunión?",
+    "options": [
+      "Se adelantó",
+      "Se celebró el viernes",
+      "Se aplazó"
+    ],
+    "correct_index": 2,
+    "feedback": [
+      "Aplazar significa pasarla a otro momento.",
+      "La oración dice que se aplazó, así que no se celebró como estaba previsto.",
+      "Correcto. Reconociste la acción central en una oración nueva."
+    ]
+  },
+  {
+    "variant": "B",
+    "step": 1,
+    "role": "probe",
+    "sentence": "El comité, después de escuchar a las familias, cambió la fecha del encuentro.",
+    "question": "¿Qué decidió el comité?",
+    "options": [
+      "Escuchar a las familias",
+      "Cambiar la fecha del encuentro",
+      "Cancelar todos los encuentros"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "Escuchar fue el paso anterior; busca la decisión que siguió.",
+      "Correcto. El detalle explica qué pasó antes de la decisión.",
+      "La oración habla de cambiar una fecha, no de cancelar todos los encuentros."
+    ]
+  },
+  {
+    "variant": "B",
+    "step": 2,
+    "role": "probe",
+    "sentence": "A pesar del cierre de la calle, el repartidor llegó a la biblioteca a tiempo.",
+    "question": "¿Qué ocurrió?",
+    "options": [
+      "El repartidor llegó a tiempo",
+      "La biblioteca cerró",
+      "El repartidor no pudo llegar"
+    ],
+    "correct_index": 0,
+    "feedback": [
+      "Bien. El cierre fue una dificultad que no cambió el resultado.",
+      "No se afirma que la biblioteca haya cerrado.",
+      "«A pesar de» indica un obstáculo; el repartidor sí llegó."
+    ]
+  },
+  {
+    "variant": "B",
+    "step": 3,
+    "role": "guided",
+    "sentence": "Al terminar la revisión, Sara guardó los documentos en una carpeta azul.",
+    "question": "¿Qué hizo Sara?",
+    "options": [
+      "Empezó la revisión",
+      "Guardó los documentos",
+      "Compró una carpeta"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "La revisión ya había terminado; después ocurrió la acción central.",
+      "Exacto. La frase inicial sitúa la acción en el tiempo.",
+      "El texto describe una carpeta, pero no dice que la comprara."
+    ]
+  },
+  {
+    "variant": "B",
+    "step": 4,
+    "role": "guided",
+    "sentence": "Los técnicos no apagaron el equipo que habían instalado por la mañana.",
+    "question": "¿Qué NO hicieron los técnicos?",
+    "options": [
+      "Instalar el equipo",
+      "Trabajar por la mañana",
+      "Apagar el equipo"
+    ],
+    "correct_index": 2,
+    "feedback": [
+      "«Habían instalado» indica una acción previa; busca el verbo que lleva «no».",
+      "La oración no niega que trabajaran por la mañana.",
+      "Sí. La negación afecta a apagar, no a instalar."
+    ]
+  },
+  {
+    "variant": "B",
+    "step": 5,
+    "role": "transfer",
+    "sentence": "El encargado, aunque recibió varias llamadas, abrió la sala a la hora prevista.",
+    "question": "¿Qué hizo el encargado?",
+    "options": [
+      "Abrió la sala a tiempo",
+      "Aplazó la apertura",
+      "Canceló las llamadas"
+    ],
+    "correct_index": 0,
+    "feedback": [
+      "Bien. Conservaste el hecho principal a pesar del detalle intercalado.",
+      "Las llamadas no hicieron que cambiara la hora de apertura.",
+      "La oración no afirma que cancelara las llamadas."
+    ]
+  },
+  {
+    "variant": "B",
+    "step": 6,
+    "role": "transfer",
+    "sentence": "Tras comparar los resultados, Inés descartó la propuesta que había defendido ayer.",
+    "question": "¿Qué hizo Inés con la propuesta?",
+    "options": [
+      "La mantuvo",
+      "La descartó",
+      "La presentó por primera vez"
+    ],
+    "correct_index": 1,
+    "feedback": [
+      "Defenderla ocurrió ayer; el verbo principal dice qué hizo ahora.",
+      "Exacto. La acción actual es descartarla.",
+      "La propuesta ya existía; Inés la descartó después de comparar."
+    ]
+  }
+]

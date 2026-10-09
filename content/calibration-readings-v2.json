@@ -1,0 +1,352 @@
+[
+  {
+    "slug": "calibracion-el-turno-del-taller",
+    "title": "El turno del taller",
+    "category": "Vida cotidiana",
+    "difficulty_level": "beginner",
+    "text_type": "narrative",
+    "purpose_codes": [
+      "comprender",
+      "inferir"
+    ],
+    "body": "El taller comunitario abría los sábados para reparar objetos pequeños. Una mañana, Julia llevó una lámpara que había dejado de encender. En la puerta encontró a tres personas esperando, aunque el salón parecía vacío. Un cartel decía que cada visitante debía anotar su nombre en una hoja y esperar a que le llamaran. Julia se apuntó y preguntó cuánto faltaba. Nadie sabía responderle.\n\nA los pocos minutos salió Mateo, encargado del taller. Explicó que dentro había dos mesas de trabajo, pero una estaba ocupada con herramientas que no se habían guardado el día anterior. Había comenzado a atender por orden de llegada. Sin embargo, una reparación complicada podía ocupar toda la mañana y dejar a los demás sin turno. Julia propuso anotar también el tipo de objeto y el problema descrito, sin prometer que todas las reparaciones fueran rápidas.\n\nMateo revisó la lista. La primera persona necesitaba cambiar una pieza de una radio; la segunda quería saber si podía reparar el asa de una bolsa; Julia llevaba la lámpara; la última persona pedía orientación sobre una bicicleta. Mateo podía revisar la bolsa y la lámpara en pocos minutos. La radio requería una pieza que no estaba disponible, mientras que la bicicleta necesitaba una herramienta especial. Informó a cada persona antes de empezar, para que decidiera si prefería esperar o volver otro día.\n\nJulia eligió quedarse. Mateo comprobó primero el enchufe y después abrió la base de la lámpara. Encontró un cable suelto y lo ajustó. Al probarla, la luz encendió. La dueña de la bolsa recibió una recomendación para reforzar el asa. Las otras dos personas anotaron qué piezas o herramientas debían traer la semana siguiente. Nadie obtuvo una solución idéntica, pero todos salieron con un paso claro.\n\nAl cerrar, Mateo limpió la segunda mesa y dejó los materiales en cajas marcadas. También cambió el cartel de la entrada. Ahora explicaba cómo describir el problema y avisaba que algunas revisiones solo permitirían planear la reparación. Julia vio el nuevo cartel la semana siguiente. La fila no había desaparecido, pero las personas comprendían mejor qué esperar y podían usar su tiempo con más tranquilidad.",
+    "questions": [
+      [
+        "¿Cuál fue el cambio principal en la organización del taller?",
+        [
+          "Cerró los sábados para evitar filas.",
+          "Registró el problema de cada objeto e informó qué podía hacer.",
+          "Prometió reparar todos los objetos en el mismo día."
+        ],
+        1,
+        "main_idea",
+        "idea_identification"
+      ],
+      [
+        "¿Por qué la radio no se reparó esa mañana?",
+        [
+          "Faltaba una pieza.",
+          "La persona llegó después de Julia.",
+          "Mateo no atendía radios."
+        ],
+        0,
+        "literal",
+        "comprehension"
+      ],
+      [
+        "¿Qué hizo Julia cuando supo que podían revisar su lámpara?",
+        [
+          "Se llevó la lámpara sin esperar.",
+          "Buscó una herramienta especial.",
+          "Eligió quedarse."
+        ],
+        2,
+        "supporting_detail",
+        "comprehension"
+      ],
+      [
+        "¿Qué tenían en común las cuatro personas al salir?",
+        [
+          "Todas recibieron una lámpara nueva.",
+          "Cada una sabía cuál era el siguiente paso.",
+          "Todas habían terminado su reparación."
+        ],
+        1,
+        "inferential",
+        "comprehension"
+      ],
+      [
+        "¿Para qué cambió Mateo el cartel?",
+        [
+          "Para explicar expectativas y pedir una descripción del problema.",
+          "Para anunciar que el taller ya no recibiría visitas.",
+          "Para sustituir la lista de turnos por una fila sin orden."
+        ],
+        0,
+        "purpose_task",
+        "adaptation_to_purpose"
+      ]
+    ],
+    "word_count": 353
+  },
+  {
+    "slug": "calibracion-el-mapa-del-huerto",
+    "title": "El mapa del huerto",
+    "category": "Vida cotidiana",
+    "difficulty_level": "beginner",
+    "text_type": "narrative",
+    "purpose_codes": [
+      "comprender",
+      "inferir"
+    ],
+    "body": "En el huerto de la colonia, las familias se turnaban para regar las plantas. Un lunes, Nora encontró varias macetas secas junto a otras con la tierra muy húmeda. Pensó que alguien había olvidado su turno. Antes de enviar un mensaje al grupo, revisó la hoja donde anotaban las visitas. Dos familias habían ido el domingo y ambas habían regado la misma fila, porque las marcas de las macetas ya casi no se veían.\n\nNora habló con Andrés, quien coordinaba el huerto. Él propuso escribir nombres nuevos en todas las macetas. Ella señaló que algunas se movían cada vez que limpiaban el patio. Además, había plantas grandes que ocupaban más de una maceta. Decidieron dibujar un mapa sencillo de las cuatro filas y numerar los espacios en el suelo. El mapa mostraría qué fila correspondía a cada turno y qué plantas necesitaban menos agua.\n\nEl sábado siguiente reunieron a las familias. Una niña preguntó qué pasaría si alguien no podía acudir el día asignado. Andrés respondió que bastaba con avisar al grupo antes del turno para que otra persona lo tomara. Nora añadió un espacio en la hoja para registrar el cambio. No quería que una ausencia se confundiera con una tarea realizada. También acordaron anotar la fecha de riego, en lugar de marcar únicamente una palomita sin contexto.\n\nDurante la primera semana, el mapa ayudó a distribuir el trabajo, pero apareció un problema nuevo. La llave de agua quedó cerrada una tarde y quien tenía el turno no pudo llenar la regadera. Esa persona anotó lo ocurrido y avisó en el grupo. Al día siguiente, otra familia completó el riego de esa fila. El registro permitió entender el retraso sin culpar a quien había intentado cumplir.\n\nDespués de un mes, Nora volvió a recorrer el patio. Las macetas no estaban siempre igual de húmedas; el calor cambiaba de un día a otro. Sin embargo, ya no había filas olvidadas ni dos familias regando por error el mismo espacio. El mapa no cuidaba las plantas por sí solo. Servía para que las personas compartieran una idea clara del trabajo, detectaran problemas y pudieran corregirlos a tiempo.",
+    "questions": [
+      [
+        "¿Por qué se regó dos veces la misma fila?",
+        [
+          "Las familias no conocían los turnos.",
+          "Las marcas de las macetas eran difíciles de ver.",
+          "El mapa decía que todas las filas debían regarse dos veces."
+        ],
+        1,
+        "literal",
+        "comprehension"
+      ],
+      [
+        "¿Qué identificaba el mapa?",
+        [
+          "Los espacios de las filas y las necesidades de riego.",
+          "El precio de las macetas nuevas.",
+          "Los nombres de todos los visitantes del patio."
+        ],
+        0,
+        "supporting_detail",
+        "comprehension"
+      ],
+      [
+        "¿Para qué registraban un cambio de turno?",
+        [
+          "Para castigar a quien faltara.",
+          "Para cerrar el huerto al día siguiente.",
+          "Para distinguir una ausencia de una tarea ya realizada."
+        ],
+        2,
+        "inferential",
+        "comprehension"
+      ],
+      [
+        "¿Qué hizo la familia del día siguiente tras el problema con la llave?",
+        [
+          "Movió todas las macetas.",
+          "Regó la fila que había quedado pendiente.",
+          "Borró el registro del turno anterior."
+        ],
+        1,
+        "literal",
+        "comprehension"
+      ],
+      [
+        "¿Cuál es la idea central?",
+        [
+          "Un mapa compartido ayuda a coordinar y corregir el cuidado del huerto.",
+          "Las plantas necesitan siempre la misma cantidad de agua.",
+          "El mejor método es que cada familia riegue cualquier fila."
+        ],
+        0,
+        "main_idea",
+        "idea_identification"
+      ]
+    ],
+    "word_count": 356
+  },
+  {
+    "slug": "calibracion-la-caja-de-los-libros",
+    "title": "La caja de los libros",
+    "category": "Vida cotidiana",
+    "difficulty_level": "beginner",
+    "text_type": "narrative",
+    "purpose_codes": [
+      "comprender",
+      "inferir"
+    ],
+    "body": "La escuela organizó un intercambio de libros entre familias. Cada persona podía llevar un libro en buen estado y elegir otro de una mesa común. El primer día llegaron más cajas de las previstas. Elena, voluntaria de la entrada, intentó colocarlas por tamaño, pero algunos libros para niñas y niños pequeños quedaron mezclados con manuales de cocina y novelas. Varias personas tardaban mucho en encontrar algo que quisieran leer.\n\nTomás, otro voluntario, sugirió hacer una lista de títulos. Elena pensó que una lista sería útil al final, pero primero necesitaban que las mesas fueran fáciles de recorrer. Pidió a dos familias que ayudaran a separar los libros por tipo de lectura. Usaron tres carteles: historias, información y libros para primeros lectores. Dentro de cada grupo dejaron los ejemplares visibles, sin ordenarlos por precio ni por color de la portada.\n\nA media mañana, una madre avisó que había llevado dos libros, aunque la regla hablaba de uno. Quería saber si podía llevarse dos a cambio. Los voluntarios revisaron el aviso original: cada familia podía elegir un libro por visita, pero el cartel no decía que estuviera prohibido donar más. Le agradecieron los dos ejemplares y explicaron la regla con calma. Después añadieron la frase «Puedes donar varios; elige uno por visita» al cartel de entrada.\n\nMás tarde encontraron una caja sin nombre junto a la puerta. Contenía libros con hojas sueltas y páginas manchadas. Como no sabían quién la había dejado, apartaron esos ejemplares para revisarlos. No los pusieron en la mesa común solo para llenar espacios. Los libros que podían repararse fueron destinados al taller escolar; los demás se separaron para reciclaje. La decisión evitó que otra familia eligiera un ejemplar incompleto sin darse cuenta.\n\nAl terminar la jornada, Elena contó cuántos libros quedaban en cada mesa. Había menos historias que libros informativos. Con esa información preparó un mensaje para el siguiente intercambio: pedía más cuentos, explicaba la regla de selección y recordaba revisar el estado del libro antes de llevarlo. Tomás hizo entonces la lista de títulos para quienes quisieran consultar el catálogo con anticipación. Ordenar las mesas había resuelto la búsqueda del día; registrar lo ocurrido ayudó a preparar la siguiente jornada.",
+    "questions": [
+      [
+        "¿Cómo organizaron las mesas después de ver la dificultad?",
+        [
+          "Por tamaño de las cajas.",
+          "Por tipo de lectura.",
+          "Por color de portada."
+        ],
+        1,
+        "literal",
+        "comprehension"
+      ],
+      [
+        "¿Qué aclararon a la madre que donó dos libros?",
+        [
+          "Podía donar varios, pero elegir uno por visita.",
+          "Tenía que retirar uno de sus libros.",
+          "Podía llevarse tantos como hubiera donado."
+        ],
+        0,
+        "supporting_detail",
+        "comprehension"
+      ],
+      [
+        "¿Por qué apartaron la caja sin nombre?",
+        [
+          "Porque todas las cajas sin nombre estaban reservadas.",
+          "Porque Tomás no había terminado la lista.",
+          "Porque sus libros necesitaban revisión antes de ofrecerlos."
+        ],
+        2,
+        "inferential",
+        "comprehension"
+      ],
+      [
+        "¿Para qué contó Elena los libros que quedaban?",
+        [
+          "Para decidir a quién cobrar por los libros.",
+          "Para saber qué pedir y explicar en el próximo intercambio.",
+          "Para cerrar el taller escolar."
+        ],
+        1,
+        "purpose_task",
+        "adaptation_to_purpose"
+      ],
+      [
+        "¿Qué resume mejor la historia?",
+        [
+          "Organizar, aclarar reglas y registrar lo ocurrido mejoró el intercambio.",
+          "La escuela decidió vender todos sus libros.",
+          "La lista de títulos reemplazó la revisión de los ejemplares."
+        ],
+        0,
+        "main_idea",
+        "idea_identification"
+      ]
+    ],
+    "word_count": 364
+  },
+  {
+    "slug": "calibracion-la-nota-en-la-puerta",
+    "title": "La nota en la puerta",
+    "category": "Vida cotidiana",
+    "difficulty_level": "beginner",
+    "text_type": "narrative",
+    "purpose_codes": [
+      "comprender",
+      "inferir"
+    ],
+    "body": "El centro de actividades abrió una sala nueva para leer y trabajar en grupo. El primer lunes, Fabián llegó a las ocho de la mañana con su cuaderno. La puerta estaba cerrada y había una nota que decía «Volvemos pronto». No se indicaba quién volvería ni a qué hora. Fabián esperó diez minutos y se marchó, aunque la sala habría abierto a las ocho y media. Más tarde, dos personas contaron que habían hecho lo mismo.\n\nMara, encargada de la sala, pensó que necesitaban un horario más visible. Preguntó al personal qué había ocurrido. La sala se limpiaba entre las ocho y las ocho y media, pero el cartel con el horario habitual estaba en una pared interior. Desde la calle no podía leerse. Además, los miércoles cerraba una hora antes para preparar una actividad, cosa que tampoco figuraba en la puerta.\n\nMara escribió un aviso con días y horas concretos. Lo colocó a la altura de los ojos y añadió un teléfono para consultar cambios. Su compañero le señaló que el número solo se atendía por las tardes. Para no crear otra confusión, añadieron también el horario de atención telefónica. La nota antigua quedó guardada como ejemplo de lo que no debían repetir: parecía amable, pero no permitía tomar una decisión.\n\nDurante una semana observaron la entrada. El martes, una visitante leyó el cartel y volvió después de dejar a su hija en la escuela. El miércoles, un grupo organizó su reunión antes del cierre temprano. El viernes, Fabián regresó a las ocho y media y pudo entrar sin esperar. Aun así, algunas personas intentaron acceder mientras se limpiaba. Mara añadió una frase breve: «La sala abre al público después de la limpieza».\n\nAl terminar la semana, el equipo no contó solo cuántas personas habían entrado. También anotó las preguntas que se repetían y las horas en que aparecían. Esa información ayudó a ajustar el aviso sin llenarlo de párrafos. Fabián comentó que ahora podía decidir cuándo salir de casa. Para él, el cambio importante no fue una sala distinta, sino saber con claridad si la encontraría abierta.",
+    "questions": [
+      [
+        "¿A qué hora abrió la sala el primer lunes?",
+        [
+          "A las ocho.",
+          "A las ocho y media.",
+          "A las nueve y media."
+        ],
+        1,
+        "literal",
+        "comprehension"
+      ],
+      [
+        "¿Qué faltaba en la primera nota?",
+        [
+          "Una hora concreta para volver.",
+          "El nombre del centro.",
+          "El teléfono de Fabián."
+        ],
+        0,
+        "supporting_detail",
+        "comprehension"
+      ],
+      [
+        "¿Por qué añadieron el horario del teléfono?",
+        [
+          "Para atender llamadas de madrugada.",
+          "Porque el número solo se atendía por las tardes.",
+          "Porque el cartel no tenía espacio."
+        ],
+        1,
+        "inferential",
+        "comprehension"
+      ],
+      [
+        "¿Qué hizo Fabián el viernes?",
+        [
+          "Esperó diez minutos y se marchó.",
+          "Pidió que cancelaran la limpieza.",
+          "Volvió a la hora de apertura y entró."
+        ],
+        2,
+        "literal",
+        "comprehension"
+      ],
+      [
+        "¿Cuál fue el efecto principal del aviso nuevo?",
+        [
+          "Permitió planear las visitas con información clara.",
+          "Eliminó la necesidad de limpiar la sala.",
+          "Cambió todas las actividades del centro."
+        ],
+        0,
+        "main_idea",
+        "idea_identification"
+      ]
+    ],
+    "word_count": 349
+  },
+  {
+    "slug": "calibracion-la-mesa-compartida",
+    "title": "La mesa compartida",
+    "category": "Vida cotidiana",
+    "difficulty_level": "beginner",
+    "text_type": "narrative",
+    "purpose_codes": [
+      "comprender",
+      "inferir"
+    ],
+    "body": "En una casa de cultura, las personas podían usar una mesa grande para preparar proyectos. Laura llevaba allí materiales para dibujar; Daniel reparaba juguetes y Camila estudiaba con su grupo. Un jueves, Laura encontró la mesa cubierta de cajas vacías. No sabía si podía moverlas. Una nota pegada a una caja decía «Pendiente», pero no explicaba de qué ni de quién eran. Laura terminó trabajando en una silla junto a la ventana.\n\nAl día siguiente, Daniel vio la misma escena. Preguntó en recepción y supo que las cajas eran de una actividad del miércoles. Nadie había decidido dónde guardarlas. La encargada, Beatriz, ofreció liberar la mesa de inmediato. Sin embargo, antes de mover todo, revisó si había materiales que alguien necesitaría recuperar. Encontró una lista de nombres en una de las cajas y llamó a las personas responsables.\n\nEsa tarde, el equipo separó los objetos en tres grupos: materiales que podían devolverse, cosas que se usarían otra vez y cajas vacías para reciclar. Guardaron los materiales reutilizables en un armario marcado. La mesa quedó despejada, pero Beatriz comprendió que podía repetirse el problema después de cada actividad. Propuso una regla sencilla: al terminar, cada grupo debía registrar qué dejaba, dónde estaría y cuándo lo retiraría.\n\nCamila hizo una pregunta importante. ¿Qué pasaba si otro grupo necesitaba la mesa mientras alguien regresaba por sus cosas? Beatriz explicó que los materiales podían esperar en el armario, no sobre la superficie compartida. El registro serviría para encontrarlos sin bloquear el trabajo de los demás. También añadieron una caja pequeña para objetos olvidados y una fecha para revisarla cada semana.\n\nEl jueves siguiente, Laura llegó con sus hojas y encontró la mesa libre. En el armario había un paquete marcado con el nombre de Daniel; él podría recogerlo después de su clase. Camila y sus compañeros utilizaron la otra mitad de la mesa para estudiar. Nadie necesitó adivinar qué podía mover. Beatriz observó que la regla no había dado más espacio al salón. Había hecho visible una responsabilidad que antes quedaba sin dueño, y eso permitió compartir mejor el lugar.",
+    "questions": [
+      [
+        "¿Por qué Laura no usó la mesa el primer jueves?",
+        [
+          "Estaba cubierta de cajas cuyo destino no conocía.",
+          "La sala estaba cerrada.",
+          "Camila ocupaba toda la mesa."
+        ],
+        0,
+        "literal",
+        "comprehension"
+      ],
+      [
+        "¿Qué descubrió Beatriz en una de las cajas?",
+        [
+          "Un libro prestado.",
+          "Una lista de nombres.",
+          "Una herramienta rota."
+        ],
+        1,
+        "supporting_detail",
+        "comprehension"
+      ],
+      [
+        "¿Dónde debían esperar los materiales de alguien que volvería?",
+        [
+          "Sobre la mesa.",
+          "Junto a la ventana.",
+          "En el armario marcado."
+        ],
+        2,
+        "literal",
+        "comprehension"
+      ],
+      [
+        "¿Para qué servía el registro al terminar una actividad?",
+        [
+          "Para ubicar materiales sin bloquear la mesa.",
+          "Para prohibir proyectos nuevos.",
+          "Para sustituir la caja de reciclaje."
+        ],
+        0,
+        "inferential",
+        "comprehension"
+      ],
+      [
+        "¿Qué idea resume mejor la historia?",
+        [
+          "La mesa necesitaba ser más grande.",
+          "Una regla clara ayudó a compartir el espacio y cuidar los materiales.",
+          "Solo una persona debía poder usar la mesa."
+        ],
+        1,
+        "main_idea",
+        "idea_identification"
+      ]
+    ],
+    "word_count": 346
+  }
+]
